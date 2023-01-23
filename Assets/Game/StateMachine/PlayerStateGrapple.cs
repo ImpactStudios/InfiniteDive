@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerStateGrapple : PlayerBaseState {
 
+    bool go = false;
+
     public PlayerStateGrapple(PlayerStateMachine currentContext, PlayerStateFactory playerStateFactory) : base (currentContext, playerStateFactory) {
         _isMovementState = false;
         name = "grapple";
@@ -14,8 +16,7 @@ public class PlayerStateGrapple : PlayerBaseState {
         // Debug.Log("ENTER GRAPPLE");
         
         InitializeSubStates();
-        ctx.inputBufferTimer = 0.5f;
-        // ctx._grappleArc.enabled = true;
+        t = 0f;
     }
 
     public override void UpdateState()
@@ -28,7 +29,11 @@ public class PlayerStateGrapple : PlayerBaseState {
         //     }
         // }
 
-        if ((!ctx.moveData.wishJumpDown || ctx.inputBufferTimer >= 0f) && ctx.moveData.grappling && t == 0f) {
+        if (ctx.moveData.wishJumpUp) {
+            go = true;
+        }
+
+        if (!go) {
             t = 0f;
             GrappleMoveTargeting();
 
@@ -50,10 +55,9 @@ public class PlayerStateGrapple : PlayerBaseState {
 
 
         } 
-        else if  (ctx.moveData.wishJumpDown && ctx.inputBufferTimer < 0f && (ctx.moveData.grappling) || t > 0f) {
-            t += Time.deltaTime;
+        else if  (go) {
 
-            ctx.ignoreGravityTimer = .25f;
+            // ctx.ignoreGravityTimer = .25f;
 
             ctx.bezierCurve.InterpolateAcrossCurveC2(t);
 
@@ -61,12 +65,12 @@ public class PlayerStateGrapple : PlayerBaseState {
                 ctx.moveData.grappling = false;
             }
 
+            t += Time.deltaTime;
         }
 
 
         if (ctx.moveData.wishCrouchDown) {
             ctx.moveData.grappling = false;
-            ctx.ignoreGravityTimer = .25f;
         }
 
         CheckSwitchStates();
@@ -75,7 +79,6 @@ public class PlayerStateGrapple : PlayerBaseState {
 
     public override void ExitState()
     {
-        t = 0f;
         // Debug.Log("EXIT GRAPPLE");
     }
 
@@ -139,6 +142,7 @@ public class PlayerStateGrapple : PlayerBaseState {
         // ctx.bezierCurve.CreateSpiralFromVelocity();
         // ctx.bezierCurve.CreateArcFromVelocity();
         ctx.bezierCurve.GrappleArc(ctx.moveData.grappleNormal, ctx.moveData.grapplePoint);
+        ctx.bezierCurve.DrawCurve();
 
     }
 

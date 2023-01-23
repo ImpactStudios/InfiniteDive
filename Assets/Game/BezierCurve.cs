@@ -24,7 +24,9 @@ public class BezierCurve : MonoBehaviour
     Vector3[] projectedPoints = new Vector3[stepNumber];
     Vector3 projectedVelocity = Vector3.zero;
     ISurfControllable ctx;
-    static int stepNumber = 200;
+    static int stepNumber = 500;
+
+    Plane cutoffPlane;
 
     GameObject xPlaneObj = null;
     GameObject yPlaneObj = null;
@@ -37,7 +39,7 @@ public class BezierCurve : MonoBehaviour
     
     CatmullRomCurve[] catmullRomSegments;
 
-    public BezierCurve(ISurfControllable ls, Vector3 contactNormal, Vector3 target) {
+    public BezierCurve(ISurfControllable ls) {
 
         ctx = ls;
         projectedPoints = new Vector3[stepNumber];
@@ -96,15 +98,15 @@ public class BezierCurve : MonoBehaviour
         
         lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
         
-        lr.SetPosition(1-1, GetBezierPoint(.1f).pos);
-        lr.SetPosition(2-1, GetBezierPoint(.2f).pos);
-        lr.SetPosition(3-1, GetBezierPoint(.3f).pos);
-        lr.SetPosition(4-1, GetBezierPoint(.4f).pos);
-        lr.SetPosition(5-1, GetBezierPoint(.5f).pos);
-        lr.SetPosition(6-1, GetBezierPoint(.6f).pos);
-        lr.SetPosition(7-1, GetBezierPoint(.7f).pos);
-        lr.SetPosition(8-1, GetBezierPoint(.8f).pos);
-        lr.SetPosition(9-1, GetBezierPoint(.99f).pos);
+        lr.SetPosition(0, GetBezierPoint(.1f).pos);
+        lr.SetPosition(1, GetBezierPoint(.2f).pos);
+        lr.SetPosition(2, GetBezierPoint(.3f).pos);
+        lr.SetPosition(3, GetBezierPoint(.4f).pos);
+        lr.SetPosition(4, GetBezierPoint(.5f).pos);
+        lr.SetPosition(5, GetBezierPoint(.6f).pos);
+        lr.SetPosition(6, GetBezierPoint(.7f).pos);
+        lr.SetPosition(7, GetBezierPoint(.8f).pos);
+        lr.SetPosition(8, GetBezierPoint(.99f).pos);
 
         Vector3 p1 = GetBezierPoint(.333f).pos;
         Vector3 p2 = GetBezierPoint(.666f).pos;
@@ -117,14 +119,17 @@ public class BezierCurve : MonoBehaviour
 
     }
 
-    public void Clear() {
-        lr.positionCount = 0;
+    public void DrawProjection() {
 
-        GameObject.Destroy(emptyParent);
-        GameObject.Destroy(xPlaneObj);
-        GameObject.Destroy(yPlaneObj);
-        GameObject.Destroy(zPlaneObj);
-        GameObject.Destroy(arrow);
+        lr.positionCount = stepNumber;
+        
+        lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
+
+        for (int i = 0; i < stepNumber; i++) {
+
+            lr.SetPosition(i, projectedPoints[i]);
+
+        }
 
     }
 
@@ -140,7 +145,51 @@ public class BezierCurve : MonoBehaviour
         return (control_net + chord) / 2f;
     }
 
-    
+    // public void PredictGravityArc(Vector3 origin, float gravity, Vector3 initialVel, Vector3 targetNormal, Vector3 targetPos) {
+
+    //     Vector3 projectedOrigin = origin;
+    //     Vector3 projectedVelocity = initialVel;
+
+    //     cutoffPlane = new Plane(targetNormal, targetPos);
+
+    //     for (int i = 0; i < stepNumber; i++) {
+
+    //         projectedPoints[i] = projectedOrigin;
+
+    //         if (cutoffPlane.GetDistanceToPoint(projectedOrigin) < 1f) {
+    //             continue;
+    //         }
+            
+    //         projectedVelocity = projectedVelocity + Vector3.down * gravity * Time.fixedDeltaTime;
+    //         projectedOrigin = projectedOrigin + projectedVelocity * Time.fixedDeltaTime;
+
+    //     }
+
+    // }
+
+    public void PredictGravityArc(Vector3 origin, float gravity, Vector3 initialVel) {
+
+        Vector3 projectedOrigin = origin;
+        Vector3 projectedVelocity = initialVel;
+
+        bool contact = false;
+
+        for (int i = 0; i < stepNumber; i++) {
+
+            projectedPoints[i] = projectedOrigin;
+
+            if (contact || Physics.CheckSphere(projectedOrigin, 1.45f, LayerMask.GetMask("Ground"))) {
+                contact = true;
+                continue;
+            } else {
+                projectedVelocity = projectedVelocity + Vector3.down * gravity * Time.fixedDeltaTime;
+                projectedOrigin = projectedOrigin + projectedVelocity * Time.fixedDeltaTime;
+            }
+            
+
+        }
+
+    }
 
     public void GrappleArc(Vector3 contactNormal, Vector3 target) {
 
@@ -284,7 +333,6 @@ public class BezierCurve : MonoBehaviour
         estimatedVelocity = Mathf.Max(initialVelocityMag, ctx.moveConfig.runSpeed - 5f) + 5f;
         estimatedTime = totalDistance / estimatedVelocity;
 
-        DrawCurve();
     }
 
     /*         controlPoints[0].transform.position = ctx.moveData.origin;
@@ -458,8 +506,6 @@ public class BezierCurve : MonoBehaviour
 
         OrientedPoint op = GetBezierPoint( Mathf.Min(t / estimatedTime, .95f ));
 
-        // Debug.Log(estimatedTime);
-
         // ctx.moveData.momentumVelocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
         // ctx.moveData.momentumVelocity = Vector3.Lerp(ctx.moveData.momentumVelocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
         ctx.moveData.momentumVelocity = (op.rot * Vector3.forward) * (estimatedVelocity);
@@ -486,53 +532,53 @@ public class BezierCurve : MonoBehaviour
         return new OrientedPoint(Vector3.Lerp(d, e, t), (e-d).normalized);
     }
 
-    public void SpiralCurve(float centerForce, Vector3 gTarget, Vector3 initialV, Vector3 targetV) {
+    // public void SpiralCurve(float centerForce, Vector3 gTarget, Vector3 initialV, Vector3 targetV) {
 
-        Vector3 projectedOrigin = ctx.moveData.origin;
-        float distanceFromPoint = ctx.moveData.distanceFromPoint;
+    //     Vector3 projectedOrigin = ctx.moveData.origin;
+    //     float distanceFromPoint = ctx.moveData.distanceFromPoint;
         
-        Vector3 gTargetDir = (gTarget - ctx.moveData.origin).normalized;
-        float targetDist = (gTarget - ctx.moveData.origin).magnitude;
+    //     Vector3 gTargetDir = (gTarget - ctx.moveData.origin).normalized;
+    //     float targetDist = (gTarget - ctx.moveData.origin).magnitude;
 
-        // Vector3 pTarget = 
+    //     // Vector3 pTarget = 
 
 
-        Vector3 velocityInTargetDir = Vector3.Dot(initialV, gTargetDir) * gTargetDir;
+    //     Vector3 velocityInTargetDir = Vector3.Dot(initialV, gTargetDir) * gTargetDir;
         
-        Vector3 velocityOrthagonal = initialV - velocityInTargetDir;
+    //     Vector3 velocityOrthagonal = initialV - velocityInTargetDir;
 
-        // float grappleVelocityMag = distanceFromPoint * centerForce;
-        float grappleVelocityMag = 10f * centerForce;
+    //     // float grappleVelocityMag = distanceFromPoint * centerForce;
+    //     float grappleVelocityMag = 10f * centerForce;
 
-        projectedVelocity = grappleVelocityMag * gTargetDir + velocityOrthagonal;
-        // ctx.moveData.momentumVelocity = projectedVelocity;
+    //     projectedVelocity = grappleVelocityMag * gTargetDir + velocityOrthagonal;
+    //     // ctx.moveData.momentumVelocity = projectedVelocity;
 
-        float future_t = 0f;
+    //     float future_t = 0f;
 
-        for (int i = 0; i < stepNumber; i++) {
+    //     for (int i = 0; i < stepNumber; i++) {
             
-            if (Vector3.Distance(projectedOrigin, gTarget) < 2f) {
-                projectedPoints[i] = projectedOrigin;
-                continue;
-            }
+    //         if (Vector3.Distance(projectedOrigin, gTarget) < 2f) {
+    //             projectedPoints[i] = projectedOrigin;
+    //             continue;
+    //         }
 
-            projectedVelocity = grappleVelocityMag * gTargetDir + velocityOrthagonal;
-            projectedOrigin = Vector3.Lerp(projectedOrigin, projectedOrigin + projectedVelocity, .1f);
+    //         projectedVelocity = grappleVelocityMag * gTargetDir + velocityOrthagonal;
+    //         projectedOrigin = Vector3.Lerp(projectedOrigin, projectedOrigin + projectedVelocity, .1f);
 
 
-            projectedPoints[i] = projectedOrigin;
+    //         projectedPoints[i] = projectedOrigin;
 
-            gTargetDir = (gTarget - projectedOrigin).normalized;
-            distanceFromPoint = (gTarget - projectedOrigin).magnitude;
-            velocityInTargetDir = Vector3.Dot(projectedVelocity, gTargetDir) * gTargetDir;
-            velocityOrthagonal = projectedVelocity - velocityInTargetDir;
-            future_t += Time.smoothDeltaTime;
-            // grappleVelocityMag = distanceFromPoint * centerForce;
-            // grappleVelocityMag = 2f;
+    //         gTargetDir = (gTarget - projectedOrigin).normalized;
+    //         distanceFromPoint = (gTarget - projectedOrigin).magnitude;
+    //         velocityInTargetDir = Vector3.Dot(projectedVelocity, gTargetDir) * gTargetDir;
+    //         velocityOrthagonal = projectedVelocity - velocityInTargetDir;
+    //         future_t += Time.smoothDeltaTime;
+    //         // grappleVelocityMag = distanceFromPoint * centerForce;
+    //         // grappleVelocityMag = 2f;
             
-        }
+    //     }
 
-    }
+    // }
 
     public void CancelVelocityAgainst(Vector3 wishDir) {
         ctx.moveData.momentumVelocity += Vector3.Dot(ctx.moveData.momentumVelocity, -wishDir) * wishDir;

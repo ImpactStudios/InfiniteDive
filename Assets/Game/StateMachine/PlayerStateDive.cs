@@ -79,7 +79,7 @@ public class PlayerStateDive : PlayerBaseState {
     }
 
     private void MouseSteerAir() {
-        DiveInfluenceVelocityMouseAir(ref ctx.moveData.momentumVelocity);
+        DiveInfluenceVelocityAir();
     }
 
     private void Accelerate() {

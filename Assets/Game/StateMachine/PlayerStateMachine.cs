@@ -43,7 +43,8 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
     public GameObject _groupCam;
     public GameObject _targetGroup;
     public ParticleSystem speedTrails;
-    public CinemachineFramingTransposer vcam;
+    public CinemachineVirtualCamera virtualCam;
+    public CinemachineFramingTransposer framingCam;
     public CinemachineSameAsFollowTarget aimCam;
     public CinemachineFramingTransposer groupcam;
     public CinemachineTargetGroup targetGroup;
@@ -180,7 +181,8 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         lineMat = cutLine.GetComponent<RawImage>().material;
         dotMat = aimDot.GetComponent<RawImage>().material;
 
-        vcam = _vcam.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineFramingTransposer>();
+        virtualCam =  _vcam.GetComponent<CinemachineVirtualCamera>();
+        framingCam = _vcam.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineFramingTransposer>();
         groupcam = _groupCam.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineFramingTransposer>();
         targetGroup = _targetGroup.GetComponent<CinemachineTargetGroup>();
         brain = cam.GetComponent<CinemachineBrain>();
@@ -347,6 +349,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         currentState = new PlayerStateAir(this, new PlayerStateFactory(this));
         currentState.InitializeSubStates();
         moveData.targets = new Collider[5];
+        bezierCurve = new BezierCurve(this);
 
     }
 
@@ -496,11 +499,11 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
             circleMat.SetFloat("_alpha", 0f);
         }
 
-        if (moveData.grappling) {
-            if (moveData.wishCrouchDown || moveData.distanceFromPoint > 150f || moveData.distanceFromPoint < moveConfig.minDistance) {
-                StopGrapple();
-            }
-        }
+        // if (moveData.grappling) {
+        //     if (moveData.wishCrouchDown || moveData.distanceFromPoint > 150f || moveData.distanceFromPoint < moveConfig.minDistance) {
+        //         StopGrapple();
+        //     }
+        // }
 
 
     }
@@ -591,13 +594,13 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         // _vcam.SetActive(false);
         // _groupCam.SetActive(true);
 
-        string[] mask;
+        string[] mask = new string[] { "Ground" };
 
-        if (moveData.wishFire2Down) {
-            mask = new string[] { "Ground" };
-        } else {
-            mask = new string[] { "Focus" };
-        }
+        // if (moveData.wishFire2Down) {
+        //     mask;
+        // } else {
+        //     mask = new string[] { "Focus" };
+        // }
         
         RaycastHit hit;
         if (Physics.SphereCast (
@@ -608,64 +611,106 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
             layerMask: LayerMask.GetMask (mask),
             queryTriggerInteraction: QueryTriggerInteraction.Ignore))
         {
-            lookAtThis.position = hit.point;
+            moveData.focusPoint = hit.point;
+            moveData.focusNormal = hit.normal;
+            moveData.focusDir = (hit.point - moveData.origin).normalized;
         } else {
-            lookAtThis.position = cam.transform.position + cam.transform.forward * moveConfig.maxDistance;
+            moveData.focusPoint = Vector3.zero;
+            moveData.focusNormal = Vector3.zero;
+            moveData.focusDir = Vector3.zero;
+        }
+
+        if (Physics.SphereCast (
+            ray: new Ray(moveData.origin, moveData.momentumVelocity.normalized),
+            radius: moveConfig.castRadius,
+            hitInfo: out hit,
+            maxDistance: moveConfig.maxDistance,
+            layerMask: LayerMask.GetMask (mask),
+            queryTriggerInteraction: QueryTriggerInteraction.Ignore))
+        {
+            moveData.velocityPoint = hit.point;
+            moveData.velocityNormal = hit.normal;
+        } else {
+            moveData.velocityPoint = Vector3.zero;
+            moveData.velocityNormal = Vector3.zero;
         }
             
+        lookAtThis.position = cam.transform.position + cam.transform.forward * moveConfig.maxDistance;
     }
 
     private void CameraStuff() { // TODO:
 
-        vcam.m_UnlimitedSoftZone = false;
+        framingCam.m_UnlimitedSoftZone = false;
 
         if (moveData.detectWall) {
-            vcam.m_ScreenX = Mathf.Lerp(vcam.m_ScreenX, 0.5f + Vector3.Dot(moveData.wallNormal, -viewRight) / 3f, Time.deltaTime * 2f);
+            framingCam.m_ScreenX = Mathf.Lerp(framingCam.m_ScreenX, 0.5f + Vector3.Dot(moveData.wallNormal, -viewRight) / 3f, Time.deltaTime * 2f);
         } else {
-            vcam.m_ScreenX = Mathf.Lerp(vcam.m_ScreenX, 0.5f, Time.deltaTime);
+            framingCam.m_ScreenX = Mathf.Lerp(framingCam.m_ScreenX, 0.5f, Time.deltaTime);
+        }
+
+        if (moveData.wishFire2Down || moveData.wishJumpDown) {
+            virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 75f, Time.deltaTime * 4f);
+        } else {
+            virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 90f, Time.deltaTime * 2f);
         }
 
 
-        if (moveData.wishFire2Down || currentState.currentSubState.name == "neutral") {
-            vcam.m_LookaheadTime = Mathf.Lerp(vcam.m_LookaheadTime, 0f, Time.deltaTime / 2f);
-            vcam.m_CameraDistance = Mathf.Lerp(vcam.m_CameraDistance, 2f, Time.deltaTime * 2F);
-            vcam.m_SoftZoneHeight = Mathf.Lerp(vcam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
-            vcam.m_SoftZoneWidth = Mathf.Lerp(vcam.m_SoftZoneWidth, .666f, Time.deltaTime * 4f);
-            vcam.m_DeadZoneHeight = 0f;
-            vcam.m_DeadZoneWidth = .333f;
-            vcam.m_XDamping = Mathf.Lerp(vcam.m_XDamping, .5f, Time.deltaTime * 4f);
-            vcam.m_YDamping = Mathf.Lerp(vcam.m_YDamping, .5f, Time.deltaTime * 4f);
-            vcam.m_ZDamping = Mathf.Lerp(vcam.m_ZDamping, .5f, Time.deltaTime * 4f);
+        if (currentState.currentSubState.name == "neutral") {
+
+            framingCam.m_LookaheadTime = 0f;
+            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 2f, Time.deltaTime * 2f);
+            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .333f, Time.deltaTime * 4f);
+            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .333f, Time.deltaTime * 4f);
+            framingCam.m_DeadZoneHeight = 0f;
+            framingCam.m_DeadZoneWidth = .333f;
+            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, .1f, Time.deltaTime * 4f);
+            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, .1f, Time.deltaTime * 4f);
+            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, .1f, Time.deltaTime * 4f);
             aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, 0f, Time.deltaTime * 2f);
-            vcam.m_DeadZoneDepth = Mathf.Lerp(vcam.m_DeadZoneDepth, vcam.m_CameraDistance - 1f, Time.deltaTime * 4f);
+            framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
         } else if (moveData.wishShiftDown || !moveData.grounded) {
             
-            vcam.m_LookaheadTime = Mathf.Lerp(vcam.m_LookaheadTime, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) / 3f, Time.deltaTime);
-            vcam.m_CameraDistance = Mathf.Lerp(vcam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward) / 2f + 2f, 5f), Time.deltaTime * 2f);
+            framingCam.m_LookaheadTime = Mathf.Lerp(framingCam.m_LookaheadTime, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) / 3f, Time.deltaTime);
+            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward) / 2f + 2f, 5f), Time.deltaTime * 2f);
+
+             framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, .5f, Time.deltaTime * 4f);
+            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, .5f, Time.deltaTime * 4f);
+            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, .5f, Time.deltaTime * 4f);
             
-            vcam.m_SoftZoneHeight = Mathf.Lerp(vcam.m_SoftZoneHeight, .8f, Time.deltaTime * 4f);
-            vcam.m_SoftZoneWidth = Mathf.Lerp(vcam.m_SoftZoneWidth, .8f, Time.deltaTime * 4f);
-            vcam.m_DeadZoneHeight = 0f;
-            vcam.m_DeadZoneWidth = .333f;
+            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .8f, Time.deltaTime * 4f);
+            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .8f, Time.deltaTime * 4f);
+            framingCam.m_DeadZoneHeight = 0f;
+            framingCam.m_DeadZoneWidth = .333f;
             
 
             float dampingFunction = 0.5f + Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed);
 
-            vcam.m_XDamping = dampingFunction * .75f;
-            vcam.m_YDamping = dampingFunction * .75f;
-            vcam.m_ZDamping = dampingFunction * .75f;
+            framingCam.m_XDamping = dampingFunction * .75f;
+            framingCam.m_YDamping = dampingFunction * .75f;
+            // vcam.m_ZDamping = dampingFunction * .75f;
 
-            if (!moveData.grounded) {
-                stability = Mathf.Lerp(stability, 1.5f, Time.deltaTime);
-            } else {
+            if (moveData.grounded) {
                 stability = Mathf.Lerp(stability, .5f, Time.deltaTime);
+            } else {
+                stability = Mathf.Lerp(stability, 1.5f, Time.deltaTime);
             }
 
             aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
 
-            vcam.m_DeadZoneDepth = Mathf.Lerp(vcam.m_DeadZoneDepth, vcam.m_CameraDistance - 3f, Time.deltaTime * 4f);
+            framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
         }
 
+    }
+
+    IEnumerable<Vector3> EvaluateSlerpPoints(Vector3 start, Vector3 end, Vector3 center,int count = 10) {
+        var startRelativeCenter = start - center;
+        var endRelativeCenter = end - center;
+
+        var f = 1f / count;
+
+        for (var i = 0f; i < 1 + f; i += f) {
+            yield return Vector3.Slerp(startRelativeCenter, endRelativeCenter, i) + center;
+        }
     }
 
     private void ConnectGrapple(Vector3 grapplePosition) {
@@ -684,7 +729,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
         moveData.mousePosition = Vector3.zero;
         
-        bezierCurve = new BezierCurve(this, moveData.grappleNormal, moveData.grapplePoint);
+        // bezierCurve = new BezierCurve(this);
 
     }
 
@@ -693,10 +738,9 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         moveData.grapplePoint = Vector3.zero;
         Destroy(moveData.joint);
 
-        bezierCurve.Clear();
+        // bezierCurve.Clear();
         grappleArc.enabled = false;
         
-        moveData.grappling = false;
     }
 
     void DrawRope() {

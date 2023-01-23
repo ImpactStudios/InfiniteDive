@@ -140,47 +140,35 @@ public abstract class PlayerBaseState
 
         ctx.boostInputTimer = 1f;
         ctx.jumpTimer = .5f;
-        ctx.reduceGravityTimer = .25f;
+        ctx.reduceGravityTimer = Time.deltaTime * 2f;
 
-        ctx.sonicBoom.Play();
+        if (name == "neutral") {
+            // Debug.Log(ctx.moveData.vCharge);
+            if (ctx.moveData.vCharge < .12f) {
+                ctx.moveData.momentumVelocity += ctx.groundNormal * ctx.moveConfig.jumpForce / Mathf.Sqrt(2f);
+            } else {
+                ctx.moveData.momentumVelocity += ctx.groundNormal * ctx.moveConfig.jumpForce;
+            }
+            ctx.moveData.vCharge = 0f;
+        }
+        else {
+            ctx.sonicBoom.Play();
 
-        Vector3 wishDir = ctx.avatarLookForward;
+            if (Vector3.Dot(ctx.avatarLookForward, flatForward) >= .99f || Vector3.Dot(ctx.avatarLookForward, -normal) > 0f) {
+                ctx.avatarLookForward = Vector3.ProjectOnPlane(ctx.avatarLookForward, normal);
+            }
 
-        if (Vector3.Dot(wishDir, flatForward) >= .98f || Vector3.Dot(wishDir, -normal) > 0f) {
-            wishDir = Vector3.ProjectOnPlane(ctx.avatarLookForward, normal);
+            ImpulseCancelVelocityAgainst(ctx.avatarLookForward);
+            float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
+            ctx.moveData.momentumVelocity = ctx.avatarLookForward * forceJump + Vector3.Dot(ctx.moveData.momentumVelocity.normalized, ctx.avatarLookForward) * ctx.moveData.momentumVelocity.magnitude * ctx.avatarLookForward;
+            ctx.moveData.vCharge = 0f;
+
         }
 
-        ImpulseCancelVelocityAgainst(wishDir);
-        float forceJump = Mathf.Max(ctx.moveData.vCharge * 15f, ctx.moveConfig.jumpForce + 10f);
-        ctx.moveData.momentumVelocity = wishDir * forceJump + Vector3.Dot(ctx.moveData.momentumVelocity.normalized, wishDir) * ctx.moveData.momentumVelocity.magnitude * wishDir;
-        ctx.moveData.vCharge = 0f;
     }
 
-        protected void AirJump(Vector3 normal) {
-
-        if (ctx.boostInputTimer > 0f) return;
-
-        if (ctx.moveData.vCharge < .5f) {
-            ctx.moveData.vCharge = 0f;
-            ctx.moveData.momentumVelocity += normal * ctx.moveConfig.jumpForce;
-            return;
-        }
-
-        ctx.boostInputTimer = 1f;
-        ctx.jumpTimer = .5f;
-
-        ctx.sonicBoom.Play();
-
-        Vector3 wishDir = ctx.avatarLookForward;
-
-        if (Vector3.Dot(wishDir, flatForward) >= .98f || Vector3.Dot(wishDir, -normal) > 0f) {
-            wishDir = Vector3.ProjectOnPlane(ctx.avatarLookForward, normal);
-        }
-
-        ImpulseCancelVelocityAgainst(wishDir);
-        float forceJump = Mathf.Max(ctx.moveData.vCharge * 15f, ctx.moveConfig.jumpForce + 10f);
-        ctx.moveData.momentumVelocity = wishDir * forceJump + Vector3.Dot(ctx.moveData.momentumVelocity.normalized, wishDir) * ctx.moveData.momentumVelocity.magnitude * wishDir;
-        ctx.moveData.vCharge = 0f;
+    protected void BoostJump() {
+        
     }
 
     protected void WallJump() {
@@ -232,7 +220,7 @@ public abstract class PlayerBaseState
 
     protected void DiveInfluenceVelocityAir() {
 
-        Vector3 influence = ctx.moveData.wishMove * ctx.moveData.momentumVelocity.magnitude * Mathf.Pow(3f, .5f) / 2f;
+        Vector3 influence = ctx.moveData.wishMove * ctx.moveData.momentumVelocity.magnitude * Mathf.Pow(3f, .5f) / 5f;
         
         float influenceOrthagonalToVelocity = Vector3.Dot(influence, ctx.velocityRight);
         Vector3 angularAcceleration = influenceOrthagonalToVelocity * ctx.velocityRight;
@@ -255,27 +243,6 @@ public abstract class PlayerBaseState
         Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
 
         influencedV += angularAcceleration * (Time.deltaTime);
-        
-    }
-
-    protected void DiveInfluenceVelocityMouseAir(ref Vector3 influencedV) {
-        
-        Vector3 influence = ctx.moveData.wishMove * ctx.moveData.momentumVelocity.magnitude * Mathf.Pow(3f, .5f) / 3f;
-
-        float influenceOrthagonalToVelocityRight = Vector3.Dot(influence, ctx.velocityRight);
-        Vector3 angularAccelerationY = influenceOrthagonalToVelocityRight * ctx.velocityRight;
-
-        float influenceOrthagonalToVelocityUp = Vector3.Dot(influence, ctx.velocityUp);
-        Vector3 angularAccelerationX = influenceOrthagonalToVelocityUp * ctx.velocityUp;
-
-        float influenceOppositeToVelocity = Mathf.Clamp(Vector3.Dot(influence, -ctx.velocityForward), 0f, influence.magnitude / 4f);
-        Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
-
-
-        float lookingRightY = Vector3.Dot(influence.normalized, ctx.velocityRight);
-        float lookingBackY = Vector3.Dot(influence.normalized, -ctx.velocityForward);
-
-        influencedV += angularAccelerationY * (Time.deltaTime);
         
     }
 
@@ -321,6 +288,12 @@ public abstract class PlayerBaseState
     public void ImpulseCancelVelocityAgainst(Vector3 wishDir) {
 
         ctx.moveData.momentumVelocity += Vector3.Dot(ctx.moveData.momentumVelocity, -wishDir.normalized) * wishDir;
+
+    }
+
+    public Vector3 ImpulseCancelVelocityAgainst(Vector3 wishDir, Vector3 influencedV) {
+
+        return influencedV + Vector3.Dot(influencedV, -wishDir.normalized) * wishDir;
 
     }
 

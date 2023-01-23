@@ -50,7 +50,6 @@ public class PlayerStateMelee : PlayerBaseState {
             ctx.moveData.targetPoint = Vector3.zero;
             ctx.moveData.targetDir = Vector3.zero;
             ctx.moveData.distanceFromTarget = 0f;
-            ctx.bezierCurve.Clear();
             ctx.bezierCurve = null;
         }
 
@@ -127,7 +126,7 @@ public class PlayerStateMelee : PlayerBaseState {
 
         if (Physics.SphereCast(ray, 1f, out hit, 300f, LayerMask.GetMask (new string[] { "Enemy" }))) {
             ctx.moveData.targetNormal = hit.normal;
-            ctx.bezierCurve = new BezierCurve(ctx, ctx.moveData.targetNormal, ctx.moveData.targetPoint);
+            ctx.bezierCurve = new BezierCurve(ctx);
             ctx.bezierCurve.AttackArc(ctx.moveData.targetNormal, ctx.moveData.targetPoint);
         } else {
             ctx.currentTarget = null;

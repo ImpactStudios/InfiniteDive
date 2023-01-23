@@ -64,6 +64,14 @@ namespace Fragsurf.Movement {
         public Vector3 grappleDir;
         public float lookingAtPoint;
 
+        // Focus
+
+        public Vector3 focusPoint;
+        public Vector3 focusNormal;
+        public Vector3 focusDir;
+        public Vector3 velocityPoint;
+        public Vector3 velocityNormal;
+
         // Other
         public Vector3 targetNormal;
         public Vector3 targetPoint;

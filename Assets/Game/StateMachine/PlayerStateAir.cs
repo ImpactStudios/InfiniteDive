@@ -100,6 +100,9 @@ public class PlayerStateAir : PlayerBaseState {
 
         } else { // falling state
 
+            ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, ctx.moveData.momentumVelocity);
+            ctx.bezierCurve.DrawProjection();
+
             if (ctx.ignoreGravityTimer > 0f) {} 
             else if (ctx.reduceGravityTimer <= 0f) {
                 ctx.moveData.momentumVelocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * (1f - ctx.reduceGravityTimer));

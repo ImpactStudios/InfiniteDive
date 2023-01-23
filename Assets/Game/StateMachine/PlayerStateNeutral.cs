@@ -12,16 +12,20 @@ public class PlayerStateNeutral : PlayerBaseState {
     public override void EnterState()
     {
         oldMomentum = Vector3.Scale(ctx.moveData.momentumVelocity, new Vector3(1f, 0f, 1f));
-        // Debug.Log("ENTER NEUTRAL");
+        Debug.Log("ENTER NEUTRAL");
     }
 
     public override void UpdateState()
     {
         OnlyInfluence();
 
-        // if (ctx.moveData.wishJumpUp) {
-        //     Jump(ctx.groundNormal);
-        // }
+        if (ctx.moveData.wishJumpDown) {
+            ctx.moveData.vCharge = Mathf.Min(ctx.moveData.vCharge + Time.deltaTime, ctx.moveConfig.maxCharge);
+        }
+
+        if (ctx.moveData.wishJumpUp) {
+            Jump(ctx.groundNormal);
+        }
 
         CheckSwitchStates();
     }

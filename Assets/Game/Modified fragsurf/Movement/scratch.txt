@@ -280,4 +280,30 @@ Not "what should I have done?" but "what did I actually want?"
 
 We don't know how to search our feelings. We are only searching our meanings. Google search what you are thinking and feeling, not what others are thinking and feeling.
 
+Searching is word creating
 
+As a general preface, the concept features a grapple and some kind of dynamic momentum system that reduces player control as velocity increases, but gives the player tools such as a grapple to control and redirect their velocity. The fundamental goal was to try to mechanically evolve the "movement" component of modern movement shooters into something that scales in 3D space. You can see the present limitation of high velocity movement in games such as the Sonic franchise where the goal of level design becomes to restrict movement rather than design tools which the player can then master to control it.
+
+My basic assumption and belief is that "movement" in games is the most fundamental thing that we are exploring as the video game industry evolves. Whether it is the strategic calculation surrounding player moves, or the efficiency and speed with which the player moves, or the memorized pattern movement in a boss battle, or the trained movement of practiced command inputs in fighting games, a player feels somehow in videogames that there is a vast game space in which they can "move" freely. I think the best example of this kind of magic lives inside the phenomenon of competitive Super Smash Bros. Melee, which almost seems to have an infinite amount of ways a player can master and express themselves through the movement of their character. Such a game can only be made by a director and designer like Masahiro Sakurai, who has such a profound and intimate consideration for the player. Even before he began his own Youtube channel for game design, he was a great inspiration for me and my understanding of game design.
+
+I began with a vague image in my head of a game I wanted to play: a combination of the Pathfinder grapple from Apex Legends and the charge mechanic from Kirby Air Ride. Some kind of loop where velocity was gained from grappling​ skillfully and that "kinetic energy" could charged as "potential energy" and be used by the player to propel themselves or shoot lasers or use abilities or whatever. I wanted inertia to be a resource the player could store into a consumable meter so that it could be used skillfully to generate even more velocity and so on, essentially incentivizing movement itself as the basic game loop. To make things more complicated for myself but ultimately to bring the game where the market is, I also wanted it to work with and feel like conventional analog aim strafe controls.
+
+Actually, there is another reason why  I wanted to use strafe controls in my game. Ever since I started learning mouse and key controls in Apex Legends after a long gaming history in Smash Bros. of handheld controllers, I have been absolutely fascinated by strafing and the way you aim with the mouse. It is truly a completely different interface, and I believe there is even a difference in the very attitude of the player across player-controller interfaces. There is a greater emphasis on player attention and precision, rather than reaction and anticipation, due to how much more control a human can have when they are aiming not only with their fingers but with their entire arm. It was so interesting just to experience the ​physicality ​of learning a completely different way to interface with the game. Not only did I need to train my arm with Kovaak's and fix my posture, but ​my eyes had to look at the screen differently.​ I felt a sense of awe for the marvel of the phenomenon of videogaming itself that I hadn't felt in a long time. I knew somehow in the motion of the analog control that there is a greater potential.
+
+THESE WORDS TASTE LIKE INTELLIGENCE TO ME, I'M SURE THAT MEANS EVERYONE ELSE WILL AUTOMATICALLY AGREE WITH MY ASSESSMENT OF WHAT MAKES SENSE WITHOUT EXPLAINATION
+
+Trauma makes you less than human
+
+With AI, we have arrived at the End of the World
+
+"it is Information" vs "it is Feeling"
+
+Air quotes in my mind
+
+Let's bring this Madness down a notch
+
+The organism's nervous system has always already been insufficient to handle the present situation. Always already a failure. YOUR job, today, is to figure out how to improve for tomorrow.
+
+Yes, YOUR job. What is YOUR job? YOUR job is to figure out what THEIR job is, and to cease and desist all industry that is COUNTERPRODUCTIVE.
+
+614500161156

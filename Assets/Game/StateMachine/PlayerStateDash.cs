@@ -28,13 +28,19 @@ public class PlayerStateDash : PlayerBaseState {
 
         if (ctx.moveData.wishJumpDown) {
             SubtractVelocityAgainst(ref ctx.moveData.momentumVelocity, -ctx.moveData.momentumVelocity.normalized, ctx.moveData.momentumVelocity.magnitude / 2f);
-            ctx.vcam.m_CameraDistance = Mathf.Lerp(ctx.vcam.m_CameraDistance, 3f, Time.deltaTime * 4f);
+            ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 3f, Time.deltaTime * 4f);
 
             BrakeCharge();
 
             ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
 
             ctx.sphereLines.Play();
+
+            Vector3 launchVel = ImpulseCancelVelocityAgainst(ctx.avatarLookForward, ctx.moveData.momentumVelocity);
+            float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
+            launchVel = ctx.avatarLookForward * forceJump + Vector3.Dot(launchVel.normalized, ctx.avatarLookForward) * launchVel.magnitude * ctx.avatarLookForward;
+            ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, launchVel);
+            ctx.bezierCurve.DrawProjection();
         }
 
         if (ctx.moveData.wishJumpUp) {
