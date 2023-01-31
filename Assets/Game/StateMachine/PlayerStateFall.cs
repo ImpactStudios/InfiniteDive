@@ -11,8 +11,8 @@ public class PlayerStateFall : PlayerBaseState {
 
     public override void EnterState()
     {
-        oldMomentum = Vector3.Scale(ctx.moveData.momentumVelocity, new Vector3(1f, 0f, 1f));
-        // Debug.Log("ENTER FALL");
+        // oldMomentum = Vector3.Scale(ctx.moveData.momentumVelocity, new Vector3(1f, 0f, 1f));
+        Debug.Log("ENTER FALL");
         ctx.sphereLines.Stop();
     }
 

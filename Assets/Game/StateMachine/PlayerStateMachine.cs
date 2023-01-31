@@ -1,15 +1,17 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Fragsurf.Movement;
+// using Fragsurf.Movement;
 using System.Collections;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using Fragsurf.TraceUtil;
+// using Fragsurf.TraceUtil;
 using DynamicMeshCutter;
 using UnityEngine.VFX;
 using Cinemachine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
+using UnityEngine.Events;
+using MagicaCloth;
 
 // BanannaRepublic
 // user
@@ -22,7 +24,7 @@ public enum ColliderType {
     Sphere
 }
 
-public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
+public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     [SerializeField] GameObject grappleGun;
     [SerializeField] GameObject smokeObj;
@@ -30,6 +32,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
     [SerializeField] GameObject sonicBoomObj;
     [SerializeField] GameObject airHikeObj;
     [SerializeField] GameObject sphereLinesObj;
+    [SerializeField] MagicaAreaWind wind;
     public GameObject lookAhead;
     public Volume globalVolume;
     public VisualEffect grappleArc;
@@ -147,10 +150,12 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
 
     public Transform lookAtThis;
+    public Transform focusOnThis;
+
     public GameObject slashObj;
     public GameObject trajectory;
-    public GameObject cloak;
-    private Material cloakMat;
+    // public GameObject cloak;
+    // private Material cloakMat;
     public GameObject focusCircle;
     private Material circleMat;
     public GameObject cutLine;
@@ -176,7 +181,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         animator = transform.GetChild(1).GetComponent<Animator>();
         slashObj = transform.GetChild(2).transform.GetChild(1).gameObject;
 
-        cloakMat = cloak.GetComponent<Renderer>().material;
+        // cloakMat = cloak.GetComponent<Renderer>().material;
         circleMat = focusCircle.GetComponent<RawImage>().material;
         lineMat = cutLine.GetComponent<RawImage>().material;
         dotMat = aimDot.GetComponent<RawImage>().material;
@@ -216,6 +221,10 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         lookAtThis.position = Vector3.zero;
         lookAtThis.localPosition = Vector3.zero;
         lookAtThis.localScale = new Vector3(moveConfig.castRadius/2f, moveConfig.castRadius/2f, moveConfig.castRadius/2f);
+
+        focusOnThis.position = Vector3.zero;
+        focusOnThis.localPosition = Vector3.zero;
+        // focusOnThis.localScale = new Vector3(moveConfig.castRadius/2f, moveConfig.castRadius/2f, moveConfig.castRadius/2f);
 
         avatarLookForward = bodyForward;
 
@@ -275,6 +284,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
         PlayerControls.Player.Fire2.started += context => {
             moveData.wishFire2Down = true;
+            moveData.wishFire2Press = true;
         };
 
         PlayerControls.Player.Fire2.canceled += context => {
@@ -333,6 +343,9 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
             moveData.mousePosition.x = moveData.mousePosition.x % 1920f;
             moveData.mousePosition.y = moveData.mousePosition.y % 1200f;
+
+            xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier;
+		    yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier;
         };
 
         // PlayerControls.Player.Look2.performed += context => {
@@ -394,6 +407,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         moveData.wishCrouchUp = false;
         moveData.wishFireUp = false;
         moveData.wishFire2Up = false;
+        moveData.wishFire2Press = false;
 
         if (moveData.wishEscapeDown) {
             Application.Quit();
@@ -455,16 +469,16 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
             animator.SetBool("onGround", moveData.grounded);
             
             if (xVel >= 2f) {
-                cloakMat.SetFloat("_WaveFrequency", -.25f);
+                // cloakMat.SetFloat("_WaveFrequency", -.25f);
             } else {
-                cloakMat.SetFloat("_WaveFrequency", .25f);
+                // cloakMat.SetFloat("_WaveFrequency", .25f);
             }
 
             // Mathf.Lerp(-.1f, .3f, moveData.momentumVelocity.magnitude/moveConfig.runSpeed)
 
-            cloakMat.SetVector("_WindDirection2", new Vector3(-xVel/moveConfig.runSpeed, -moveData.momentumVelocity.y/moveConfig.runSpeed + .25f, -yVel/moveConfig.runSpeed));
-            cloakMat.SetFloat("_Amplitude", .15f);
-            cloakMat.SetFloat("_AmplitudeFloor", Mathf.Lerp(.15f, .35f, moveData.momentumVelocity.magnitude/moveConfig.runSpeed));
+            // cloakMat.SetVector("_WindDirection2", new Vector3(-xVel/moveConfig.runSpeed, -moveData.momentumVelocity.y/moveConfig.runSpeed + .25f, -yVel/moveConfig.runSpeed));
+            // cloakMat.SetFloat("_Amplitude", .15f);
+            // cloakMat.SetFloat("_AmplitudeFloor", Mathf.Lerp(.15f, .35f, moveData.momentumVelocity.magnitude/moveConfig.runSpeed));
         // }
 
     }
@@ -473,31 +487,42 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
         float distance = 150f * grappleShootTimer * 2f;
 
-        if (moveData.wishFire2Down && !moveData.grappling) {
+        if (moveData.wishFire2Press && !moveData.grappling) {
+            ConnectGrapple(moveData.focusPoint);
 
-            grappleShootTimer = Mathf.Min((Time.deltaTime) + grappleShootTimer, .5f);
-            circleMat.SetFloat("_size", .5f - grappleShootTimer + .001f);
-            circleMat.SetFloat("_alpha", grappleShootTimer*2f);
+            moveData.screenFocusPoint = cam.WorldToScreenPoint(focusOnThis.position);
+            moveData.screenLookAtPoint = cam.WorldToScreenPoint(lookAtThis.position);
 
-            Ray ray = new Ray(avatarLookTransform.position + avatarLookForward * 20f, avatarLookForward);
-            RaycastHit hit;
+            Vector2 differenceInPixels = (moveData.screenFocusPoint - moveData.screenLookAtPoint);
 
-            if (Physics.SphereCast(ray, moveConfig.castRadius, out hit, distance, LayerMask.GetMask (new string[] { "Focus", "Ground" }))) {
-                circleMat.SetColor("_color", moveConfig.grappleColor);
-            } else {
-                circleMat.SetColor("_color", Color.grey);
-            }
-
-        } else {
-
-            if (grappleShootTimer > 0f) {
-                ShootGrapple(distance);
-            }
-
-
-            grappleShootTimer = 0f;
-            circleMat.SetFloat("_alpha", 0f);
+            moveData.focusDir = -differenceInPixels.normalized;
         }
+
+        // if (moveData.wishFire2Down && !moveData.grappling) {
+
+        //     grappleShootTimer = Mathf.Min((Time.deltaTime) + grappleShootTimer, .5f);
+        //     circleMat.SetFloat("_size", .5f - grappleShootTimer + .001f);
+        //     circleMat.SetFloat("_alpha", grappleShootTimer*2f);
+
+        //     Ray ray = new Ray(avatarLookTransform.position + avatarLookForward * moveConfig.castRadius * 2f, avatarLookForward);
+        //     RaycastHit hit;
+
+        //     if (Physics.SphereCast(ray, moveConfig.castRadius * 2f, out hit, distance, LayerMask.GetMask (new string[] { "Focus", "Ground" }))) {
+        //         circleMat.SetColor("_color", moveConfig.grappleColor);
+        //     } else {
+        //         circleMat.SetColor("_color", Color.grey);
+        //     }
+
+        // } else {
+
+        //     if (grappleShootTimer > 0f) {
+                // ShootGrapple(distance);
+        //     }
+
+
+        //     grappleShootTimer = 0f;
+        //     circleMat.SetFloat("_alpha", 0f);
+        // }
 
         // if (moveData.grappling) {
         //     if (moveData.wishCrouchDown || moveData.distanceFromPoint > 150f || moveData.distanceFromPoint < moveConfig.minDistance) {
@@ -553,14 +578,78 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
     private void TransformRotation() {
 
+
+        string[] mask = new string[] { "Ground", "Ball" };
+
+        // if (moveData.wishFire2Down) {
+        //     mask;
+        // } else {
+        //     mask = new string[] { "Focus" };
+        // }
+
+        float aimAssistParam = 1f; // 1f - 4f
+        float retry = moveConfig.maxDistance / aimAssistParam;
+        float originalRad = 1f;
+        float rad = originalRad;
+        Vector3 castPos = avatarLookTransform.position + avatarLookForward * originalRad;
+        bool aimAssistOn = false;
+        
+        RaycastHit hit;
+        // focusOnThis.position = Vector3.zero;
+
+        for (float i = 0; i < retry; i++) {
+
+            Ray r = new Ray(castPos, avatarLookForward);
+
+            if (Physics.SphereCast (
+                ray: r,
+                radius: rad,
+                hitInfo: out hit,
+                maxDistance: moveConfig.maxDistance - rad,
+                layerMask: LayerMask.GetMask (mask),
+                queryTriggerInteraction: QueryTriggerInteraction.Ignore))
+            {
+                moveData.focusPoint = hit.point;
+                moveData.focusNormal = hit.normal;
+                // aimAssistOn = true;
+
+                break;
+            } else {
+                // moveData.focusPoint = cam.transform.position + viewForward * aimAssistParam;
+                moveData.focusPoint = lookAtThis.position;
+            }
+
+            rad += originalRad / 5f; // divide by 5 because fucking who knows UPDATE: the screen pixel to object ratio is 1/10. radius is half
+            castPos = avatarLookTransform.position + avatarLookForward * rad;
+
+        }
+
+        focusOnThis.position = Vector3.Lerp(focusOnThis.position, moveData.focusPoint, Time.deltaTime * 10f);
+
+        // if (Physics.SphereCast (
+        //     ray: new Ray(moveData.origin, moveData.momentumVelocity.normalized),
+        //     radius: moveConfig.castRadius,
+        //     hitInfo: out hit,
+        //     maxDistance: moveConfig.maxDistance,
+        //     layerMask: LayerMask.GetMask (mask),
+        //     queryTriggerInteraction: QueryTriggerInteraction.Ignore))
+        // {
+        //     moveData.velocityPoint = hit.point;
+        //     moveData.velocityNormal = hit.normal;
+        // } else {
+        //     moveData.velocityPoint = Vector3.zero;
+        //     moveData.velocityNormal = Vector3.zero;
+        // }
+
+        
         Vector3 tPoint = cam.WorldToViewportPoint(avatarLookTransform.position);
         tPoint.z = 0f;
         centeredPoint = Vector3.Lerp(centeredPoint, (tPoint - new Vector3(.5f, .5f, 0f)) * 2f, Time.deltaTime * 10f);
 
         mouseDeceleration = (1f - Mathf.Clamp01(centeredPoint.magnitude));
 
-        xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier;
-		yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier;
+        // xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier;
+		// yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier;
 
 		float response = 100f; // TODO:
 
@@ -575,6 +664,26 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         }
 
         lineMat.SetFloat("_lineAlpha", 0f);
+
+
+        // if (aimAssistOn) {
+        if (moveData.grappling) {
+            
+            // if (differenceInPixels.magnitude > (1f/aimAssistParam * 50f)) {
+            // if (differenceInPixels.magnitude > 50f) {
+
+                // float aimAssistY = Mathf.Lerp(0f, -differenceInPixels.y, Time.deltaTime); // screen space y goes top down
+                // float aimAssistX = Mathf.Lerp(0f, differenceInPixels.x, Time.deltaTime);
+
+                yMovement = Mathf.Lerp(0f, yMovement, .2f);
+                xMovement = Mathf.Lerp(0f, xMovement, .2f);
+
+                // yMovement = Mathf.Lerp(yMovement, aimAssistY, (differenceInPixels.magnitude)/100f);
+                // xMovement = Mathf.Lerp(xMovement, aimAssistX, (differenceInPixels.magnitude)/100f);
+
+            // }
+
+        }
 
         viewTransformLookAt.x = Mathf.Clamp(viewTransformLookAt.x + yMovement, moveConfig.minYRotation, moveConfig.maxYRotation) % 360f;
         viewTransformLookAt.y = viewTransformLookAt.y + xMovement % 360f;
@@ -594,53 +703,15 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         // _vcam.SetActive(false);
         // _groupCam.SetActive(true);
 
-        string[] mask = new string[] { "Ground" };
+        lookAtThis.position = Vector3.Lerp(lookAtThis.position, cam.transform.position + cam.transform.forward * moveConfig.maxDistance * 5f, Time.deltaTime * 15f);
 
-        // if (moveData.wishFire2Down) {
-        //     mask;
-        // } else {
-        //     mask = new string[] { "Focus" };
-        // }
-        
-        RaycastHit hit;
-        if (Physics.SphereCast (
-            ray: cam.ViewportPointToRay(new Vector3(.5f, .5f, 0f)),
-            radius: moveConfig.castRadius,
-            hitInfo: out hit,
-            maxDistance: moveConfig.maxDistance,
-            layerMask: LayerMask.GetMask (mask),
-            queryTriggerInteraction: QueryTriggerInteraction.Ignore))
-        {
-            moveData.focusPoint = hit.point;
-            moveData.focusNormal = hit.normal;
-            moveData.focusDir = (hit.point - moveData.origin).normalized;
-        } else {
-            moveData.focusPoint = Vector3.zero;
-            moveData.focusNormal = Vector3.zero;
-            moveData.focusDir = Vector3.zero;
-        }
-
-        if (Physics.SphereCast (
-            ray: new Ray(moveData.origin, moveData.momentumVelocity.normalized),
-            radius: moveConfig.castRadius,
-            hitInfo: out hit,
-            maxDistance: moveConfig.maxDistance,
-            layerMask: LayerMask.GetMask (mask),
-            queryTriggerInteraction: QueryTriggerInteraction.Ignore))
-        {
-            moveData.velocityPoint = hit.point;
-            moveData.velocityNormal = hit.normal;
-        } else {
-            moveData.velocityPoint = Vector3.zero;
-            moveData.velocityNormal = Vector3.zero;
-        }
-            
-        lookAtThis.position = cam.transform.position + cam.transform.forward * moveConfig.maxDistance;
     }
 
     private void CameraStuff() { // TODO:
 
         framingCam.m_UnlimitedSoftZone = false;
+
+        // wind.transform.position = moveData.origin + -bodyUp * 2f;
 
         if (moveData.detectWall) {
             framingCam.m_ScreenX = Mathf.Lerp(framingCam.m_ScreenX, 0.5f + Vector3.Dot(moveData.wallNormal, -viewRight) / 3f, Time.deltaTime * 2f);
@@ -654,39 +725,42 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
             virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 90f, Time.deltaTime * 2f);
         }
 
+        framingCam.m_DeadZoneDepth = 0f;
+        // framingCam.m_TrackedObjectOffset = Vector3.up * framingCam.m_CameraDistance / 10f;
 
         if (currentState.currentSubState.name == "neutral") {
 
             framingCam.m_LookaheadTime = 0f;
-            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 2f, Time.deltaTime * 2f);
-            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .333f, Time.deltaTime * 4f);
-            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .333f, Time.deltaTime * 4f);
+            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 2.5f, Time.deltaTime * 2f);
+            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
+            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
             framingCam.m_DeadZoneHeight = 0f;
             framingCam.m_DeadZoneWidth = .333f;
-            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, .1f, Time.deltaTime * 4f);
-            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, .1f, Time.deltaTime * 4f);
-            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, .1f, Time.deltaTime * 4f);
+            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
             aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, 0f, Time.deltaTime * 2f);
-            framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
+            // framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
         } else if (moveData.wishShiftDown || !moveData.grounded) {
             
-            framingCam.m_LookaheadTime = Mathf.Lerp(framingCam.m_LookaheadTime, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) / 3f, Time.deltaTime);
-            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward) / 2f + 2f, 5f), Time.deltaTime * 2f);
+            // framingCam.m_LookaheadTime = Mathf.Lerp(framingCam.m_LookaheadTime, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) / 5f, Time.deltaTime);
+            // framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward) / 4f + 2f, 5f), Time.deltaTime * 2f);
+            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 5f, Time.deltaTime * 2f);
 
-             framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, .5f, Time.deltaTime * 4f);
-            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, .5f, Time.deltaTime * 4f);
-            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, .5f, Time.deltaTime * 4f);
+            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
             
-            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .8f, Time.deltaTime * 4f);
-            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .8f, Time.deltaTime * 4f);
+            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
+            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
             framingCam.m_DeadZoneHeight = 0f;
             framingCam.m_DeadZoneWidth = .333f;
             
 
             float dampingFunction = 0.5f + Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed);
 
-            framingCam.m_XDamping = dampingFunction * .75f;
-            framingCam.m_YDamping = dampingFunction * .75f;
+            // framingCam.m_XDamping = dampingFunction * .75f;
+            // framingCam.m_YDamping = dampingFunction * .75f;
             // vcam.m_ZDamping = dampingFunction * .75f;
 
             if (moveData.grounded) {
@@ -695,9 +769,9 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
                 stability = Mathf.Lerp(stability, 1.5f, Time.deltaTime);
             }
 
-            aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
+            // aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
 
-            framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
+            // framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
         }
 
     }
@@ -727,7 +801,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         moveData.distanceFromPoint = Vector3.Distance(moveData.origin, moveData.grapplePoint);
         moveData.grappling = true;
 
-        moveData.mousePosition = Vector3.zero;
+        // moveData.mousePosition = Vector3.zero;
         
         // bezierCurve = new BezierCurve(this);
 
@@ -813,7 +887,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
     // }
 
     private void ShootGrapple(float distance) {
-        Ray ray = new Ray(avatarLookTransform.position + avatarLookForward, avatarLookForward);
+        Ray ray = new Ray(avatarLookTransform.position + avatarLookForward * moveConfig.castRadius * 2f, avatarLookForward);
         RaycastHit hit;
 
         if (Physics.SphereCast(ray, moveConfig.castRadius, out hit, distance, LayerMask.GetMask (new string[] { "Focus", "Ground" })))
@@ -871,7 +945,7 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
         RaycastHit hit = RaycastTo(-groundNormal);
 
-        if (hit.collider == null) {
+        if (hit.collider == null || jumpTimer > 0f) {
 
             SetGround(null);
             groundNormal = Vector3.Lerp(groundNormal, Vector3.up, Time.deltaTime / 2f);
@@ -937,29 +1011,32 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
         if ((moveData.momentumVelocity.sqrMagnitude) == 0f) {
 
             // Do collisions while standing still
-            SurfPhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity);
+            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
 
         } else {
 
             float maxDistPerFrame = 0.2f;
             Vector3 velocityThisFrame = moveData.momentumVelocity * Time.deltaTime;
+            moveData.origin += velocityThisFrame;
             float velocityDistLeft = velocityThisFrame.magnitude;
             float initialVel = velocityDistLeft;
+
+            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
             
-            while (velocityDistLeft > 0f) {
+            // while (velocityDistLeft > 0f) {
 
-                float amountThisLoop = Mathf.Min (maxDistPerFrame, velocityDistLeft);
-                velocityDistLeft -= amountThisLoop;
+            //     float amountThisLoop = Mathf.Min (maxDistPerFrame, velocityDistLeft);
+            //     velocityDistLeft -= amountThisLoop;
 
-                // increment origin
-                Vector3 velThisLoop = velocityThisFrame * (amountThisLoop / initialVel);
+            //     // increment origin
+            //     Vector3 velThisLoop = velocityThisFrame * (amountThisLoop / initialVel);
                 
-                moveData.origin += velThisLoop;
+            //     moveData.origin += velThisLoop;
 
-                // don't penetrate walls
-                SurfPhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity);
+            //     // don't penetrate walls
+            //     DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
 
-            }
+            // }
 
         }
 
@@ -1084,12 +1161,5 @@ public class PlayerStateMachine : MonoBehaviour, ISurfControllable {
 
 
     }
-
-    private void OnCollisionStay (Collision collision) {
-
-
-    }
-
-    
   
 }

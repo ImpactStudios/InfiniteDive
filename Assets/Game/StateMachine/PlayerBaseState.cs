@@ -36,6 +36,7 @@ public abstract class PlayerBaseState
     public void UpdateStates() {
 
         flatForward = viewFlat * Vector3.forward;
+        flatForwardSide = viewFlatSide * Vector3.forward;
 
         InfluenceMove();
         InfluenceAim();
@@ -129,61 +130,83 @@ public abstract class PlayerBaseState
 
     }
 
-    protected void BrakeCharge() {
+    protected void BrakeCharge(Vector3 wishDir) {
         float velocityFactor = Mathf.Max(ctx.moveData.momentumVelocity.magnitude / (ctx.moveConfig.runSpeed / 2f), 1f);
         ctx.moveData.vCharge = Mathf.Min(ctx.moveData.vCharge + Time.deltaTime * velocityFactor, ctx.moveConfig.maxCharge);
+
+        Vector3 launchVel = ImpulseCancelVelocityAgainst(wishDir, ctx.moveData.momentumVelocity);
+        float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
+        launchVel = wishDir * forceJump + Vector3.Dot(launchVel.normalized, wishDir) * launchVel.magnitude * wishDir;
+        ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, launchVel);
+        ctx.bezierCurve.DrawProjection();
     }
 
-    protected void Jump(Vector3 normal) {
+    protected void Jump(Vector3 normal, Vector3 wishDir) {
 
         if (ctx.boostInputTimer > 0f) return;
 
         ctx.boostInputTimer = 1f;
         ctx.jumpTimer = .5f;
-        ctx.reduceGravityTimer = Time.deltaTime * 2f;
+        ctx.ignoreGravityTimer = Time.deltaTime * 2f;
 
-        if (name == "neutral") {
+        // if (name == "neutral") {
+        if (false) {
             // Debug.Log(ctx.moveData.vCharge);
             if (ctx.moveData.vCharge < .12f) {
                 ctx.moveData.momentumVelocity += ctx.groundNormal * ctx.moveConfig.jumpForce / Mathf.Sqrt(2f);
             } else {
-                ctx.moveData.momentumVelocity += ctx.groundNormal * ctx.moveConfig.jumpForce;
+                float forceJump = ctx.moveConfig.jumpForce * Mathf.Max(ctx.moveData.vCharge, 1f);
+                ctx.moveData.momentumVelocity += ctx.groundNormal * forceJump;
             }
             ctx.moveData.vCharge = 0f;
         }
         else {
-            ctx.sonicBoom.Play();
-
-            if (Vector3.Dot(ctx.avatarLookForward, flatForward) >= .99f || Vector3.Dot(ctx.avatarLookForward, -normal) > 0f) {
-                ctx.avatarLookForward = Vector3.ProjectOnPlane(ctx.avatarLookForward, normal);
-            }
-
-            ImpulseCancelVelocityAgainst(ctx.avatarLookForward);
-            float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
-            ctx.moveData.momentumVelocity = ctx.avatarLookForward * forceJump + Vector3.Dot(ctx.moveData.momentumVelocity.normalized, ctx.avatarLookForward) * ctx.moveData.momentumVelocity.magnitude * ctx.avatarLookForward;
-            ctx.moveData.vCharge = 0f;
-
+            BoostJump(normal, wishDir);
         }
 
     }
 
-    protected void BoostJump() {
-        
-    }
+    protected void BoostJump(Vector3 normal, Vector3 wishDir) {
+        ctx.sonicBoom.Play();
 
-    protected void WallJump() {
+        // Vector3 wishDir = (wishDir).normalized;
 
-        if (ctx.boostInputTimer > 0f) return;
 
-        ctx.boostInputTimer = .5f;
-        ctx.jumpTimer = .25f;
+        // if (Vector3.Dot(wishDir, flatForward) >= .99f || Vector3.Dot(wishDir, -normal) > 0f) {
+        //     wishDir = Vector3.ProjectOnPlane(wishDir, normal);
+        // }
 
-        Vector3 wishDir = (ctx.moveData.wallNormal + ctx.groundNormal).normalized;
+
+
 
         ImpulseCancelVelocityAgainst(wishDir);
-
-        ctx.moveData.momentumVelocity += wishDir * ctx.moveConfig.jumpForce * 2f;
+        float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
+        ctx.moveData.momentumVelocity = wishDir * forceJump + Vector3.Dot(ctx.moveData.momentumVelocity.normalized, wishDir) * ctx.moveData.momentumVelocity.magnitude * wishDir;
+        ctx.moveData.vCharge = 0f;
     }
+
+    // protected void WallJump() {
+
+    //     if (ctx.boostInputTimer > 0f) return;
+
+    //     ctx.boostInputTimer = 1f;
+    //     ctx.jumpTimer = .5f;
+    //     ctx.ignoreGravityTimer = Time.deltaTime * 2f;
+
+    //     ctx.sonicBoom.Play();
+
+    //     Vector3 wishDir = (ctx.avatarLookForward).normalized;
+    //     float factor = 2f;
+
+    //     if (Vector3.Dot(wishDir, flatForwardSide) >= .99f || Vector3.Dot(wishDir, -ctx.moveData.wallNormal) > 0f) {
+    //         wishDir = (ctx.moveData.wallNormal + Vector3.up).normalized;
+    //         factor = 1f;
+    //     }
+
+    //     ImpulseCancelVelocityAgainst(wishDir);
+
+    //     ctx.moveData.momentumVelocity += wishDir * ctx.moveConfig.jumpForce * factor;
+    // }
 
     protected void OnlyInfluence() {
 

@@ -34,7 +34,18 @@ public class PlayerStateGrounded : PlayerBaseState
     public override void UpdateState()
     {
 
-        // Debug.Log(ctx.moveData.momentumVelocity.magnitude);
+        // Debug.Log(ctx.moveData.momentumVelocity);
+
+        if (ctx.moveData.wishJumpDown) {
+            // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 3f, Time.deltaTime * 4f);
+            ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
+            ctx.sphereLines.Play();
+            
+            SubtractVelocityAgainst(ref ctx.moveData.momentumVelocity, -ctx.moveData.momentumVelocity.normalized, ctx.moveData.momentumVelocity.magnitude / 2f);
+
+            BrakeCharge(ctx.avatarLookForward);
+        }
+
         CheckSwitchStates();
     }
 
@@ -52,12 +63,13 @@ public class PlayerStateGrounded : PlayerBaseState
         } 
         else if (ctx.moveData.grappling) {
             SetSubState(factory.Grapple());
-        } else if (!ctx.moveData.wishShiftDown) {
+        }
+        else if (ctx.moveData.wishShiftDown) {
+            SetSubState(factory.Dash());
+        } else {
             SetSubState(factory.Neutral());
             _currentSubState.oldMomentum = Vector3.Scale(ctx.moveData.momentumVelocity, new Vector3(1f, 0f, 1f));
-        } else if (ctx.moveData.wishShiftDown) {
-            SetSubState(factory.Dash());
-        }
+        } 
     }
 
     public override void CheckSwitchStates()

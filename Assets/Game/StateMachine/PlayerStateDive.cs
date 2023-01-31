@@ -20,7 +20,7 @@ public class PlayerStateDive : PlayerBaseState {
     {
 
         if (!ctx.moveData.wishJumpDown) { 
-            if (ctx.moveConfig.flyMode) {
+            if (false) {
                 MouseFly();
             } else {
                 MouseSteerAir();
@@ -73,7 +73,7 @@ public class PlayerStateDive : PlayerBaseState {
     }
 
     private void MouseFly() {
-        ctx.ignoreGravityTimer = 1f;
+        // ctx.ignoreGravityTimer = 1f;
         DiveInfluenceVelocityMouseFly(ref ctx.moveData.momentumVelocity);
 
     }

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
+using UnityEngine.Events;
 
 public class Grapple : MonoBehaviour
 {
@@ -11,8 +11,8 @@ public class Grapple : MonoBehaviour
     public Collider hit;
     public Collider playerCollider;
     public bool returning = false;
-    public static event Action Hit;
-    public static event Action Return;
+    public static event UnityAction Hit;
+    public static event UnityAction Return;
 
     void HitAThing() {
         Hit?.Invoke();

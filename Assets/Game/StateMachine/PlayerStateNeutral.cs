@@ -19,12 +19,9 @@ public class PlayerStateNeutral : PlayerBaseState {
     {
         OnlyInfluence();
 
-        if (ctx.moveData.wishJumpDown) {
-            ctx.moveData.vCharge = Mathf.Min(ctx.moveData.vCharge + Time.deltaTime, ctx.moveConfig.maxCharge);
-        }
-
         if (ctx.moveData.wishJumpUp) {
-            Jump(ctx.groundNormal);
+            Jump(ctx.groundNormal, ctx.avatarLookForward);
+            ctx.sphereLines.Stop();
         }
 
         CheckSwitchStates();

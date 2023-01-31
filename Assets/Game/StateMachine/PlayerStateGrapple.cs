@@ -23,11 +23,11 @@ public class PlayerStateGrapple : PlayerBaseState {
     {
 
 
-        // if (ctx.moveData.wishShiftDown) {
-        //     if (Vector3.Dot(ctx.moveData.momentumVelocity, ctx.moveData.grappleDir) <= 0f) {
-        //         CancelVelocityAgainst(ctx.moveData.grappleDir, 20f);
-        //     }
-        // }
+        if (ctx.moveData.wishShiftDown) {
+            if (Vector3.Dot(ctx.moveData.momentumVelocity, ctx.moveData.grappleDir) <= 0f) {
+                CancelVelocityAgainst(ctx.moveData.grappleDir, 20f);
+            }
+        }
 
         if (ctx.moveData.wishJumpUp) {
             go = true;
@@ -68,10 +68,28 @@ public class PlayerStateGrapple : PlayerBaseState {
             t += Time.deltaTime;
         }
 
+        // GrappleMoveTargeting();
+
+        // if (ctx.moveData.wishFire2Down) {
+
+        //     Vector3 midpoint = ctx.moveData.grapplePoint + (ctx.viewRotation * ctx.moveData.focusDir) * ctx.moveData.distanceFromPoint / 2f;
+        //     float grapplePullMag = ctx.moveData.distanceFromPoint / 2f;
+        //     Vector3 grapplePullVel = grapplePullMag * (midpoint - ctx.moveData.origin).normalized;
+
+        //     ctx.moveData.momentumVelocity += grapplePullVel * Time.deltaTime;
+
+        // }
+
 
         if (ctx.moveData.wishCrouchDown) {
             ctx.moveData.grappling = false;
-        }
+            ctx.ignoreGravityTimer = 1f;
+        } 
+        // else {
+        //     if (Vector3.Dot(ctx.moveData.momentumVelocity, ctx.moveData.grappleDir) <= 0f) {
+        //         CancelVelocityAgainst(ctx.moveData.grappleDir, 25f);
+        //     }
+        // }
 
         CheckSwitchStates();
 

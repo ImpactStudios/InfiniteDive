@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using Fragsurf.Movement;
 
 // [ExecuteInEditMode]
 public class BezierCurve : MonoBehaviour
@@ -23,7 +22,7 @@ public class BezierCurve : MonoBehaviour
     GameObject[] controlPoints = new GameObject[4];
     Vector3[] projectedPoints = new Vector3[stepNumber];
     Vector3 projectedVelocity = Vector3.zero;
-    ISurfControllable ctx;
+    IDiveControllable ctx;
     static int stepNumber = 500;
 
     Plane cutoffPlane;
@@ -39,7 +38,7 @@ public class BezierCurve : MonoBehaviour
     
     CatmullRomCurve[] catmullRomSegments;
 
-    public BezierCurve(ISurfControllable ls) {
+    public BezierCurve(IDiveControllable ls) {
 
         ctx = ls;
         projectedPoints = new Vector3[stepNumber];
@@ -178,7 +177,7 @@ public class BezierCurve : MonoBehaviour
 
             projectedPoints[i] = projectedOrigin;
 
-            if (contact || Physics.CheckSphere(projectedOrigin, 1.45f, LayerMask.GetMask("Ground"))) {
+            if (contact || Physics.CheckSphere(projectedOrigin, .45f, LayerMask.GetMask("Ground"))) {
                 contact = true;
                 continue;
             } else {

@@ -57,6 +57,13 @@ public class PlayerStateAir : PlayerBaseState {
     
 
     private void AirMovement() {
+
+        if (ctx.ignoreGravityTimer > 0f) { } 
+        else if (ctx.reduceGravityTimer > 0f) {
+            ctx.moveData.momentumVelocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * (1f - ctx.reduceGravityTimer));
+        } else if (!ctx.moveData.grappling) {
+            ctx.moveData.momentumVelocity.y -= (ctx.moveConfig.gravity * Time.deltaTime);
+        }
             
         if (ctx.moveData.detectWall && !ctx.moveData.grappling) { // wall run state
 
@@ -65,7 +72,6 @@ public class PlayerStateAir : PlayerBaseState {
                 ctx.airHike.SetVector3("lookAt", ctx.moveData.wallNormal / 2f);
                 ctx.airHike.SetFloat("size", 4f);
                 ctx.airHike.Play();
-                ctx.ignoreGravityTimer = 1f;
             }
 
             ctx.doubleJump = false;
@@ -78,37 +84,43 @@ public class PlayerStateAir : PlayerBaseState {
                 ctx.smokeLand.Play();
             }
             
-            ctx.moveData.momentumVelocity.y = Mathf.Lerp(ctx.moveData.momentumVelocity.y, 0f, Time.deltaTime / 4f);
+            // ctx.moveData.momentumVelocity.y = Mathf.Lerp(ctx.moveData.momentumVelocity.y, 0f, Time.deltaTime / 4f);
 
-            if (ctx.moveData.momentumVelocity.magnitude > ctx.moveConfig.runSpeed + 10f) {
-                SubtractVelocityAgainst(Vector3.ProjectOnPlane(ctx.moveData.momentumVelocity.normalized, ctx.moveData.wallNormal), ctx.moveData.momentumVelocity.magnitude / 2f);
-            } 
+            // if (ctx.moveData.momentumVelocity.magnitude > ctx.moveConfig.runSpeed + 10f) {
+            //     SubtractVelocityAgainst(Vector3.ProjectOnPlane(ctx.moveData.momentumVelocity.normalized, ctx.moveData.wallNormal), ctx.moveData.momentumVelocity.magnitude / 2f);
+            // } 
             // else 
             // if (ctx.moveData.momentumVelocity.magnitude < ctx.moveConfig.walkSpeed && ctx.moveData.wishShiftDown) {
             //     AddVelocityTo(Vector3.ProjectOnPlane(ctx.moveData.momentumVelocity.normalized, ctx.moveData.wallNormal), ctx.moveConfig.walkSpeed + 5f);
             // }
 
 
-            if (ctx.jumpTimer <= 0f) ctx.moveData.momentumVelocity += -ctx.moveData.wallNormal;
+            // if (ctx.jumpTimer <= 0f) ctx.moveData.momentumVelocity += -ctx.moveData.wallNormal;
 
             ctx.smoke.SetVector3("position", ctx.moveData.origin - ctx.moveData.wallNormal / 2f);
             ctx.smoke.SetVector3("direction", -ctx.moveData.momentumVelocity.normalized);
 
+            if (ctx.moveData.wishJumpDown) {
+                // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 3f, Time.deltaTime * 4f);
+                ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
+                ctx.sphereLines.Play();
+                
+                SubtractVelocityAgainst(ref ctx.moveData.momentumVelocity, -ctx.moveData.momentumVelocity.normalized, ctx.moveData.momentumVelocity.magnitude / 2f);
+
+                BrakeCharge(ctx.avatarLookForward);
+            }
+
             if (ctx.moveData.wishJumpUp) {
-                WallJump();
+                Jump(ctx.groundNormal, ctx.avatarLookForward);
+                ctx.sphereLines.Stop();
             }
 
         } else { // falling state
 
-            ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, ctx.moveData.momentumVelocity);
-            ctx.bezierCurve.DrawProjection();
+            // ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, ctx.moveData.momentumVelocity);
+            // ctx.bezierCurve.DrawProjection();
 
-            if (ctx.ignoreGravityTimer > 0f) {} 
-            else if (ctx.reduceGravityTimer <= 0f) {
-                ctx.moveData.momentumVelocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * (1f - ctx.reduceGravityTimer));
-            } else {
-                ctx.moveData.momentumVelocity.y -= (ctx.moveConfig.gravity * Time.deltaTime);
-            }
+
 
             // if (ctx.moveData.wishJumpDown && !ctx.doubleJump) {
             //     SubtractVelocityAgainst(ref ctx.moveData.momentumVelocity, -ctx.moveData.momentumVelocity.normalized, ctx.moveData.momentumVelocity.magnitude / 2f);

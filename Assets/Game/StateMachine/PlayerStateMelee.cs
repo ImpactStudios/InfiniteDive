@@ -14,44 +14,16 @@ public class PlayerStateMelee : PlayerBaseState {
     public override void EnterState()
     {
         // Debug.Log("ENTER MELEE");
-        InfluenceAim();
-        FindLookingAtTarget();
+        // FindLookingAtTarget();
         InitializeSubStates();
         t = 0f;
-        ctx.moveData.attacking = false;
+        // ctx.moveData.attacking = false;
         
         
     }
 
     public override void UpdateState()
     {
-
-        if (ctx.currentTarget == null) {
-            FindLookingAtTarget();
-            return;
-        }
-
-        if (ctx.currentTarget != null && ctx.moveData.wishFireDown) {
-            LungeTargeting();
-        }
-
-        if (ctx.currentTarget != null && !ctx.moveData.wishFireDown) {
-            ctx.moveData.attacking = true;
-            t += Time.deltaTime;
-
-            ctx.bezierCurve.InterpolateAcrossCurveC1(t);
-        }
-
-        if (t >= 1f) {
-            ctx.moveData.attacking = false;
-            ctx.reduceGravityTimer = 0.5f;
-
-            ctx.currentTarget = null;
-            ctx.moveData.targetPoint = Vector3.zero;
-            ctx.moveData.targetDir = Vector3.zero;
-            ctx.moveData.distanceFromTarget = 0f;
-            ctx.bezierCurve = null;
-        }
 
         CheckSwitchStates();
     }
