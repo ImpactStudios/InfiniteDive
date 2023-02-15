@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M3
+  m_Name: M4
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_ValidKeywords:
   - _EMISSION
@@ -29,7 +29,7 @@ Material:
   m_InvalidKeywords: []
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: 3012
   stringTagMap:
     RenderType: Transparent
@@ -387,7 +387,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Compa: 4
     - _ComputeMeshIndex: 0
-    - _Cull: 2
+    - _Cull: 0
     - _CullMode: 2
     - _Culling: 2
     - _CustomLightDirectionFollowObjectRotation: 0
@@ -759,13 +759,13 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0, g: 0.4142835, b: 0.9622641, a: 0.5254902}
+    - _BaseColor: {r: 0, g: 0.41428354, b: 0.9622641, a: 1}
     - _BaseColor0: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor1: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor2: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor3: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColorMap0_MipInfo: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 0, g: 0.41428348, b: 0.9622641, a: 0.5254902}
+    - _Color: {r: 0, g: 0.4142835, b: 0.9622641, a: 1}
     - _CustomLightDirection: {r: 0, g: 0, b: 10, a: 0}
     - _DiffusionProfileAsset0: {r: 0, g: 0, b: 0, a: 0}
     - _DiffusionProfileAsset1: {r: 0, g: 0, b: 0, a: 0}

@@ -13,7 +13,7 @@ public class DivePhysics {
     private const int maxCollisions = 128;
 
     ///// Methods /////
-    public static void ResolveCollisions (Collider collider, ref Vector3 origin, ref Vector3 totalVelocity, int layerMask) {
+    public static void ResolveCollisions (Collider collider, ref Vector3 origin, ref Vector3 velocity, int layerMask) {
         
         // manual collision resolving
         int numOverlaps = 0;
@@ -51,17 +51,20 @@ public class DivePhysics {
                 _colliders [i].transform.rotation, out direction, out distance)) {
 
                 if (distance == 0f) {
+                    Debug.Log("zero");
                     return;
                 }
 
-                totalVelocity += Vector3.Dot(totalVelocity, -direction) * direction;
+                velocity += Vector3.Dot(velocity, -direction) * direction;
+
+                float isSide = Mathf.Abs(Vector3.Dot(direction, Vector3.up));
 
                 // Handle collision
                 direction.Normalize();
-                Vector3 penetrationVector = direction * (distance);
+                Vector3 penetrationVector = direction * (distance + .5f * isSide);
                 origin += penetrationVector;
 
-                // totalVelocity += planeForward;
+                // velocity += planeForward;
 
 
             }

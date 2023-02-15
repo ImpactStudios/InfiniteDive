@@ -307,3 +307,27 @@ The organism's nervous system has always already been insufficient to handle the
 Yes, YOUR job. What is YOUR job? YOUR job is to figure out what THEIR job is, and to cease and desist all industry that is COUNTERPRODUCTIVE.
 
 614500161156
+
+I am a big advocate of player movement. I think it is the most fundamental and important aspect of a game. If your game has nothing else going for it, if a player can experience freedom of movement through your game then that is more than enough. Player movement can be many different things in many different games, but I like to think that it always has these three qualities:
+
+    Personality Expression - The degrees of freedom of movement are enough that you can tell how the player feels by the way they move
+    Responsiveness - The controls of movement are tight enough and made so that the player doesn't do something they didn't want to, and vice versa
+    Significance - The value of movement options are defined by the game design. If a movement system is complex but the player is never challenged to utilize it or some other mechanic makes it unnecessary, movement can simply feel like fidgeting. 
+
+At a more macro conceptualization, why are people (young men statistically) generally more motivated learning and developing skills in video games than in their own life?
+
+In the late '90s and early 2000's, kids stopped playing outside. I wish I could say that the reason why is because video games are so great that nobody wanted to play in person anymore, but let's just say society and social reality is more complicated than that. As a result of this, children lost a lot in terms of their freedom to explore the world and themselves unsupervised, and the economic market for video games theoretically sprang into existence. And the rest is history.
+
+Back in the day, people thought it was a really big deal that the Sega Genesis had Blast Processing ​​​over Nintendo ​​​and Sonic the Hedgehog was a way cooler and hip dude with attitude than regular blue collar Mario. Just look at how fast the screen is moving! You can do ​so much more with Sega Genesis than you could with Nintendo. Anyway, the trend of the video game industry for a long time was the expansion of player autonomy in the sense that players could "do more things" in either a linear progression or with each other locally.  In summary, early video games were like interactive fantasies that you could play, or sports or co-op games you could play with your family and friends at home. 
+
+What do we love about video games and media? Is it just a distraction from our lives? Is it only our way of escaping reality? Is it a capitalist exploitation of an increasingly paranoid and socially disturbed public? Or is there something special about video games besides all that, something that might be presenting us with a once in a millennium opportunity?
+
+First, I wanted to explore and learn every aspect of game development in Unity as if it were a game that I wanted to 100%. I wanted to develop the best habits and implement the most modern techniques as if game development was a competitive e-sport that I wanted to go pro in. Fundamentally, what I wanted was to "become good" at something that I cared about very deeply. I believe that there is something profound about video games, and the invisible relationship that players and creators have. I wanted to give back something to an industry of creators who had given me something. There is a very special quality about video games that has potential for the good of humanity. I think that there is something revolutionary buried here, in this shared Place.
+
+Let's take a moment to zoom out and ask an important question. How is it that video games make us feel something? Not any specific feeling, but how exactly do video games make us feel things? I remember playing Smash Bros. in college and when I would get hit or lose a stock I would say "Ow" out loud, or cringe as if I were actually in pain. Wait a minute, isn't there something odd about the way I use the word "I" in the last sentence?
+
+What is the difference between the player character, and the player themselves? Without even realizing it in my example, I referred to myself as  "I" the player character, the avatar, the virtual me, in the same sentence referring to myself as "I" the player.  Although I suppose in the industry of creative media this idea is probably not so surprising, as filmmakers and writers have since forever been occupied with the practice of capturing their audience, literally.
+
+A player may be able to move around non-uniformly in a virtual environment, and the controls might feel responsive, but when a player makes a decision to take a particular action in a certain context, the value of the player's choices and experiences are revealed as result of the natural consequence of their own actions in the context of the game environment. In other words, the game "feels" real and significant in the same way that the real world does because it has consequences, and the player learns by direct interaction rather than by rhetorical abstraction.
+
+Because of this, 

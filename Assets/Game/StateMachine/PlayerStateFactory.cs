@@ -11,7 +11,8 @@ public class PlayerStateFactory {
         grounded,
         grapple,
         melee,
-        prejump
+        lunge,
+        noop
     }
 
     PlayerStateMachine _context;
@@ -24,6 +25,7 @@ public class PlayerStateFactory {
 
         _states[State.air] = new PlayerStateAir(_context, this);
         _states[State.grounded] = new PlayerStateGrounded(_context, this);
+        _states[State.grapple] = new PlayerStateGrapple(_context, this);
 
         // sub states
 
@@ -31,8 +33,10 @@ public class PlayerStateFactory {
         _states[State.dash] = new PlayerStateDash(_context, this);
         _states[State.fall] = new PlayerStateFall(_context, this);
         _states[State.dive] = new PlayerStateDive(_context, this);
-        _states[State.grapple] = new PlayerStateGrapple(_context, this);
+        
         _states[State.melee] = new PlayerStateMelee(_context, this);
+        _states[State.lunge] = new PlayerStateLunge(_context, this);
+        _states[State.noop] = new PlayerStateNoop(_context, this);
 
     }
 
@@ -66,5 +70,13 @@ public class PlayerStateFactory {
 
     public PlayerBaseState Melee() {
         return _states[State.melee];
+    }
+
+    public PlayerBaseState Lunge() {
+        return _states[State.lunge];
+    }
+
+    public PlayerBaseState Noop() {
+        return _states[State.noop];
     }
 }

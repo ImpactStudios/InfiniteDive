@@ -1,10 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-// using Fragsurf.Movement;
 using System.Collections;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-// using Fragsurf.TraceUtil;
 using DynamicMeshCutter;
 using UnityEngine.VFX;
 using Cinemachine;
@@ -12,6 +10,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.Events;
 using MagicaCloth;
+using QFSW.QC;
 
 // BanannaRepublic
 // user
@@ -32,51 +31,52 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     [SerializeField] GameObject sonicBoomObj;
     [SerializeField] GameObject airHikeObj;
     [SerializeField] GameObject sphereLinesObj;
+    [SerializeField] public GameObject ballObj;
     [SerializeField] MagicaAreaWind wind;
     public GameObject lookAhead;
     public Volume globalVolume;
-    public VisualEffect grappleArc;
-    public VisualEffect slash;
-    public VisualEffect smoke;
-    public VisualEffect smokeLand;
-    public VisualEffect sonicBoom;
-    public VisualEffect airHike;
-    public VisualEffect sphereLines;
+    [HideInInspector] public VisualEffect grappleArc;
+    [HideInInspector] public VisualEffect slash;
+    [HideInInspector] public VisualEffect smoke;
+    [HideInInspector] public VisualEffect smokeLand;
+    [HideInInspector] public VisualEffect sonicBoom;
+    [HideInInspector] public VisualEffect airHike;
+    [HideInInspector] public VisualEffect sphereLines;
     public GameObject _vcam;
     public GameObject _groupCam;
     public GameObject _targetGroup;
     public ParticleSystem speedTrails;
-    public CinemachineVirtualCamera virtualCam;
-    public CinemachineFramingTransposer framingCam;
-    public CinemachineSameAsFollowTarget aimCam;
-    public CinemachineFramingTransposer groupcam;
-    public CinemachineTargetGroup targetGroup;
-    public CinemachineBrain brain;
+    [HideInInspector] public CinemachineVirtualCamera virtualCam;
+    [HideInInspector] public CinemachineFramingTransposer framingCam;
+    [HideInInspector] public CinemachineSameAsFollowTarget aimCam;
+    [HideInInspector] public CinemachineFramingTransposer groupcam;
+    [HideInInspector] public CinemachineTargetGroup targetGroup;
+    [HideInInspector] public CinemachineBrain brain;
     
     [SerializeField] LayerMask _groundMask;
-    [SerializeField] Slider vMeter;
-    [SerializeField] Slider pMeter;
 
     public Grapple _grapple;
     protected Grapple grapple;
 
+    public Text debug;
+
     public BezierCurve bezierCurve;
+    public GameObject bezierObj;
 
     public Camera _cam;
     GameObject _groundObject;
 
     ///// Fields /////
 
-    [Header("View Settings")]
     public Transform avatarLookTransform;
 
 
 
-    [Header ("Movement Config")]
-    [SerializeField]
-    public MovementConfig movementConfig;
+
+    
     
     private CapsuleCollider _playerCollider;
+    private SphereCollider _sphereCollider;
     private Vector3 _frontSide;
     private Vector3 _leftSide;
     private Vector3 _rightSide;
@@ -86,90 +86,93 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     PlayerStateFactory _states;
     public PlayerControls PlayerControls;
 
-    [Header ("Movement Data")]
-    [SerializeField]
-    private MoveData _moveData = new MoveData();
+    public MoveData _moveData;
+    public MoveConfig _moveConfig;
 
     ///// Properties /////
 
     public PlayerBaseState currentState { get {return _currentState; } set { _currentState = value; } }
-    public MovementConfig moveConfig { get { return movementConfig; } }
+    public MoveConfig moveConfig { get { return _moveConfig; } }
     public MoveData moveData { get { return _moveData; } }
 
     public Camera cam { get { return _cam; } set { _cam = value; } }
-    public Vector3 viewForward { get { return cam.transform.forward; } set { cam.transform.forward = value; } }
-    public Vector3 viewRight { get { return cam.transform.right; } }
-    public Vector3 viewUp { get { return cam.transform.up; } }
-    public Vector3 avatarLookForward { get { return avatarLookTransform.forward; } set { avatarLookTransform.forward = value; } }
-    public Vector3 avatarLookRight { get { return avatarLookTransform.right; } }
-    public Vector3 avatarLookUp { get { return avatarLookTransform.up; } }
-    public Vector3 bodyForward { get { return transform.forward; } }
-    public Vector3 bodyRight { get { return transform.right; } }
-    public Vector3 bodyUp { get { return transform.up; } }
-    public Vector3 velocityForward { get { return velocityRotation * Vector3.forward; } }
-    public Vector3 velocityRight { get { return velocityRotation * Vector3.right; } }
-    public Vector3 velocityUp { get { return velocityRotation * Vector3.up; } }
-    public Vector3 leftSide { get { return _leftSide; } set { _leftSide = value; } }
-    public Vector3 rightSide { get { return _rightSide; } set { _rightSide = value; } }
-    public Vector3 backSide { get { return _backSide; } set { _backSide = value; } }
-    public Vector3 frontSide { get { return _frontSide; } set { _frontSide = value; } }
-    public LayerMask groundMask { get { return _groundMask; } set { _groundMask = value; } }
-    public Vector3 groundNormal { get { return _groundNormal; } set { _groundNormal = value; } }
-    public CapsuleCollider playerCollider { get { return _playerCollider; } set { _playerCollider = value; } }
-    public GameObject groundObject { get { return _groundObject; } set { _groundObject = value; } }
-    public Quaternion viewRotation { get { return cam.transform.rotation; } set { cam.transform.rotation = value; } }
-    public Quaternion avatarLookRotation { get { return avatarLookTransform.rotation; } set { avatarLookTransform.rotation = value; } }
-    public Quaternion bodyRotation { get { return transform.rotation; } set { transform.rotation = value; } }
+    [HideInInspector] public Vector3 viewForward { get { return cam.transform.forward; } set { cam.transform.forward = value; } }
+    [HideInInspector] public Vector3 viewRight { get { return cam.transform.right; } }
+    [HideInInspector] public Vector3 viewUp { get { return cam.transform.up; } }
+    [HideInInspector] public Vector3 avatarLookForward { get { return avatarLookTransform.forward; } set { avatarLookTransform.forward = value; } }
+    [HideInInspector] public Vector3 avatarLookRight { get { return avatarLookTransform.right; } }
+    [HideInInspector] public Vector3 avatarLookUp { get { return avatarLookTransform.up; } }
+    [HideInInspector] public Vector3 bodyForward { get { return transform.forward; } }
+    [HideInInspector] public Vector3 bodyRight { get { return transform.right; } }
+    [HideInInspector] public Vector3 bodyUp { get { return transform.up; } }
+    [HideInInspector] public Vector3 velocityForward { get { return velocityRotation * Vector3.forward; } }
+    [HideInInspector] public Vector3 velocityRight { get { return velocityRotation * Vector3.right; } }
+    [HideInInspector] public Vector3 velocityUp { get { return velocityRotation * Vector3.up; } }
+    [HideInInspector] public Vector3 leftSide { get { return _leftSide; } set { _leftSide = value; } }
+    [HideInInspector] public Vector3 rightSide { get { return _rightSide; } set { _rightSide = value; } }
+    [HideInInspector] public Vector3 backSide { get { return _backSide; } set { _backSide = value; } }
+    [HideInInspector] public Vector3 frontSide { get { return _frontSide; } set { _frontSide = value; } }
+    [HideInInspector] public LayerMask groundMask { get { return _groundMask; } set { _groundMask = value; } }
+    [HideInInspector] public Vector3 groundNormal { get { return _groundNormal; } set { _groundNormal = value; } }
+    [HideInInspector] public CapsuleCollider playerCollider { get { return _playerCollider; } set { _playerCollider = value; } }
+    [HideInInspector] public SphereCollider sphereCollider { get { return _sphereCollider; } set { _sphereCollider = value; } }
+    [HideInInspector] public GameObject groundObject { get { return _groundObject; } set { _groundObject = value; } }
+    [HideInInspector] public Quaternion viewRotation { get { return cam.transform.rotation; } set { cam.transform.rotation = value; } }
+    [HideInInspector] public Quaternion avatarLookRotation { get { return avatarLookTransform.rotation; } set { avatarLookTransform.rotation = value; } }
+    [HideInInspector] public Quaternion bodyRotation { get { return transform.rotation; } set { transform.rotation = value; } }
+    [HideInInspector] public Quaternion focusRotation { get { return Quaternion.LookRotation((focusOnThis.transform.position - avatarLookTransform.position).normalized, groundNormal); } }
     public VisualEffect _grappleArc { get { return grappleArc; } }
 
     Vector3 prevPosition;
     Animator animator;
     Vector3 _groundNormal = Vector3.up;
     Vector3 lastContact = Vector3.zero;
-    public float wallTouchTimer = 0f;
-    public float jumpTimer = 0f;
-    public float groundInputTimer = 0f;
-    public float boostInputTimer = 0f;
-    public float grappleShootTimer = 0f;
-    public float grappleZipTimer = 0f;
-    public float reduceGravityTimer = 0f;
-    public float ignoreGravityTimer = 0f;
-    public float inputBufferTimer = 0f;
-    public float runTimer = 2f;
-    public float lungeTimer = 0f;
-    public bool doubleJump = false;
-    public Quaternion velocityRotation;
-	public float xMovement;
-	public float yMovement;
-	public LayerMask CamOcclusion;
-	public Vector3 displacement;
-	private Vector3 camMask = new Vector3(0, 1, -2);
-    public Vector3 viewTransformLookAt;
+    [HideInInspector] public float wallTouchTimer = 0f;
+    [HideInInspector] public float jumpTimer = 0f;
+    [HideInInspector] public float groundInputTimer = 0f;
+    [HideInInspector] public float boostInputTimer = 0f;
+    [HideInInspector] public float grappleShootTimer = 0f;
+    [HideInInspector] public float grappleZipTimer = 0f;
+    [HideInInspector] public float reduceGravityTimer = 0f;
+    [HideInInspector] public float ignoreGravityTimer = 0f;
+    [HideInInspector] public float inputBufferTimer = 0f;
+    [HideInInspector] public float runTimer = 2f;
+    [HideInInspector] public float lungeTimer = 0f;
+    [HideInInspector] public float releaseTimer = 0f;
+    [HideInInspector] public bool doubleJump = false;
+    [HideInInspector] public Quaternion velocityRotation;
+	[HideInInspector] public float xMovement;
+	[HideInInspector] public float yMovement;
+	[HideInInspector] public LayerMask CamOcclusion;
+	[HideInInspector] public Vector3 displacement;
+	[HideInInspector] private Vector3 camMask = new Vector3(0, 1, -2);
+    [HideInInspector] public Vector3 viewTransformLookAt;
     Vector3 tmpLookAt = Vector3.zero;
     Quaternion tmpLookAtRot;
+
+    // KIK: Marsh_Mellow9
 
 
     public Transform lookAtThis;
     public Transform focusOnThis;
 
-    public GameObject slashObj;
-    public GameObject trajectory;
+    [HideInInspector] public GameObject slashObj;
+    [HideInInspector] public GameObject trajectory;
     // public GameObject cloak;
     // private Material cloakMat;
-    public GameObject focusCircle;
     private Material circleMat;
-    public GameObject cutLine;
     private Material lineMat;
-    public GameObject aimDot;
     private Material dotMat;
 
     
 
-    public int targetLength = 0;
-    public Collider currentTarget = null;
-    private float mouseDeceleration;
+    [HideInInspector] public int targetLength = 0;
+    [HideInInspector] public Collider currentTarget = null;
     private Vector3 centeredPoint;
     private float stability;
+    [HideInInspector] public float focusAimBlend;
+    [HideInInspector] public float elasticTime = .5f;
+    [HideInInspector] public float centripetalForce = 2f;
     
 
     
@@ -177,14 +180,23 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void Awake() {
 
-        playerCollider = transform.GetComponent<CapsuleCollider>();
+        playerCollider = transform.GetChild(0).GetComponent<CapsuleCollider>();
+        sphereCollider = transform.GetComponent<SphereCollider>();
         animator = transform.GetChild(1).GetComponent<Animator>();
         slashObj = transform.GetChild(2).transform.GetChild(1).gameObject;
 
+        sphereCollider.radius = 3f;
+        sphereCollider.isTrigger = true;
+
+
         // cloakMat = cloak.GetComponent<Renderer>().material;
-        circleMat = focusCircle.GetComponent<RawImage>().material;
-        lineMat = cutLine.GetComponent<RawImage>().material;
-        dotMat = aimDot.GetComponent<RawImage>().material;
+        circleMat = Resources.Load("Materials/blueCircle") as Material;
+        lineMat = Resources.Load("Materials/redLine") as Material;
+        dotMat = Resources.Load("Materials/greenDot") as Material;
+
+        moveConfig.grappleColor = moveConfig.normalColor;
+
+        
 
         virtualCam =  _vcam.GetComponent<CinemachineVirtualCamera>();
         framingCam = _vcam.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineFramingTransposer>();
@@ -194,7 +206,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         aimCam = _vcam.GetComponent<CinemachineVirtualCamera>().GetCinemachineComponent<CinemachineSameAsFollowTarget>();
         
         circleMat.SetFloat("_alpha", 0f);
-        mouseDeceleration = 1f;
 
         moveData.origin = transform.position;
         prevPosition = transform.position;
@@ -224,9 +235,10 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         focusOnThis.position = Vector3.zero;
         focusOnThis.localPosition = Vector3.zero;
-        // focusOnThis.localScale = new Vector3(moveConfig.castRadius/2f, moveConfig.castRadius/2f, moveConfig.castRadius/2f);
+        focusOnThis.localScale = new Vector3(2f, 2f, 2f);
 
         avatarLookForward = bodyForward;
+        focusAimBlend = .5f;
 
 
     }
@@ -239,16 +251,24 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         PlayerControls.Disable();
     }
 
-    public IEnumerator SlashVfx() {
-        // slashObj.SetActive(true);
-        slash.Play();
-        yield return new WaitForSeconds(0.5f);
-        // slashObj.SetActive(false);
-        // cutTransform.gameObject.SetActive(false);
-    }
-
     
     private void Start() {
+
+        PlayerControls.Player.Param1.started += context => {
+            elasticTime -= .5f;
+        };
+
+        PlayerControls.Player.Param2.started += context => {
+            elasticTime += .5f;
+        };
+
+        PlayerControls.Player.Param3.started += context => {
+            centripetalForce -= .5f;
+        };
+
+        PlayerControls.Player.Param4.started += context => {
+            centripetalForce += .5f;
+        };
 
         PlayerControls.Player.Dive.started += context => {
             moveData.wishCtrl = true;
@@ -274,12 +294,14 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             moveData.wishEscapeDown = false;
         };
 
-        // PlayerControls.Player.Fire.started += context => {
-        //     moveData.wishFireDown = true;
-        // };
+        PlayerControls.Player.Fire.started += context => {
+            moveData.wishFireDown = true;
+            moveData.wishFirePress = true;
+        };
 
         PlayerControls.Player.Fire.canceled += context => {
             moveData.wishFireDown = false;
+            moveData.wishFireUp = true;
         };
 
         PlayerControls.Player.Fire2.started += context => {
@@ -344,8 +366,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             moveData.mousePosition.x = moveData.mousePosition.x % 1920f;
             moveData.mousePosition.y = moveData.mousePosition.y % 1200f;
 
-            xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier;
-		    yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier;
+            
         };
 
         // PlayerControls.Player.Look2.performed += context => {
@@ -373,6 +394,8 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         // moveData.wishGrappleDown = moveData.wishFire2;
 
+        debug.text = "Aim Assist Blend: " + focusAimBlend;
+
         DecrementTimers();
         CollisionCheck();
         UpdateInputData();
@@ -387,13 +410,13 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         DoVelocityAnimations();
         CheckGrapplePress();
         CameraStuff();
-
+        
         currentState.UpdateStates();
 
         transform.position = moveData.origin;
         prevPosition = transform.position;
 
-        moveData.flatMomentumVelocity = Vector3.ProjectOnPlane(moveData.momentumVelocity, groundNormal);
+        moveData.flatVelocity = Vector3.ProjectOnPlane(moveData.velocity, groundNormal);
 
         TransformRotation();
 
@@ -406,6 +429,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         moveData.wishShiftUp = false;
         moveData.wishCrouchUp = false;
         moveData.wishFireUp = false;
+        moveData.wishFirePress = false;
         moveData.wishFire2Up = false;
         moveData.wishFire2Press = false;
 
@@ -417,10 +441,13 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void FindTargets() {
 
-        targetLength = Physics.OverlapSphereNonAlloc(moveData.origin + moveData.momentumVelocity, 20f, moveData.targets, 1<<15);
-        lookAhead.transform.position = moveData.origin + moveData.momentumVelocity;
+        targetLength = Physics.OverlapSphereNonAlloc(moveData.origin + moveData.velocity, 3f, moveData.targets, LayerMask.GetMask (new string[] { "Enemy" }));
+        lookAhead.transform.position = moveData.origin + moveData.velocity;
 
     }
+
+    [Command("float-prop")]
+    protected static float SetAimAssist { get; private set;}
 
     
 
@@ -434,19 +461,20 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void DoVelocityAnimations() {
 
-        // Vector3.ProjectOnPlane(moveData.momentumVelocity, groundNormal);
+        // Vector3.ProjectOnPlane(moveData.velocity, groundNormal);
 
-        var yVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.momentumVelocity, groundNormal), bodyForward);
+        var yVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.velocity, groundNormal), bodyForward);
 
-        var xVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.momentumVelocity, groundNormal), bodyRight);
+        var xVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.velocity, groundNormal), bodyRight);
 
         var isDiveInput = new Vector2(moveData.horizontalAxis, moveData.verticalAxis) != Vector2.zero;
 
         smoke.SetVector3("position", moveData.origin - groundNormal);
-        smoke.SetFloat("force", moveData.momentumVelocity.magnitude / 10f);
-        smoke.SetFloat("spawnRate", 32f + moveData.momentumVelocity.magnitude);
+        smoke.SetFloat("force", moveData.velocity.magnitude / 10f);
+        smoke.SetFloat("spawnRate", 32f + moveData.velocity.magnitude);
 
-        if (moveData.momentumVelocity.magnitude > moveConfig.walkSpeed) {
+
+        if (moveData.velocity.magnitude > moveConfig.walkSpeed) {
 
             if (moveData.grounded) {
                 smoke.SetVector3("direction", -moveData.flatWishMove);
@@ -459,6 +487,13 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             smoke.SetFloat("force", 0f);
         }
 
+        if (moveData.wishCrouchDown && moveData.grounded && moveData.velocity.magnitude > moveConfig.walkSpeed) {
+            smoke.SetVector3("direction", moveData.velocity.normalized);
+            smoke.SetFloat("force", moveData.velocity.magnitude / 10f);
+
+            // xVel = Mathf.Lerp(xVel, -xVel, .3f);
+            // yVel = Mathf.Lerp(yVel, -yVel, .3f);
+        }
 
         // if (!moveData.wishFire2) {
             animator.SetFloat("xVel", xVel);
@@ -474,11 +509,11 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
                 // cloakMat.SetFloat("_WaveFrequency", .25f);
             }
 
-            // Mathf.Lerp(-.1f, .3f, moveData.momentumVelocity.magnitude/moveConfig.runSpeed)
+            // Mathf.Lerp(-.1f, .3f, moveData.velocity.magnitude/moveConfig.runSpeed)
 
-            // cloakMat.SetVector("_WindDirection2", new Vector3(-xVel/moveConfig.runSpeed, -moveData.momentumVelocity.y/moveConfig.runSpeed + .25f, -yVel/moveConfig.runSpeed));
+            // cloakMat.SetVector("_WindDirection2", new Vector3(-xVel/moveConfig.runSpeed, -moveData.velocity.y/moveConfig.runSpeed + .25f, -yVel/moveConfig.runSpeed));
             // cloakMat.SetFloat("_Amplitude", .15f);
-            // cloakMat.SetFloat("_AmplitudeFloor", Mathf.Lerp(.15f, .35f, moveData.momentumVelocity.magnitude/moveConfig.runSpeed));
+            // cloakMat.SetFloat("_AmplitudeFloor", Mathf.Lerp(.15f, .35f, moveData.velocity.magnitude/moveConfig.runSpeed));
         // }
 
     }
@@ -490,12 +525,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         if (moveData.wishFire2Press && !moveData.grappling) {
             ConnectGrapple(moveData.focusPoint);
 
-            moveData.screenFocusPoint = cam.WorldToScreenPoint(focusOnThis.position);
-            moveData.screenLookAtPoint = cam.WorldToScreenPoint(lookAtThis.position);
-
-            Vector2 differenceInPixels = (moveData.screenFocusPoint - moveData.screenLookAtPoint);
-
-            moveData.focusDir = -differenceInPixels.normalized;
+            // moveData.focusDir = -differenceInPixels.normalized;
         }
 
         // if (moveData.wishFire2Down && !moveData.grappling) {
@@ -576,10 +606,21 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         DrawRope();
     }
 
+    public Vector3 CenteredSlerp(Vector3 start, Vector3 end, float centerOffset, float t) {
+        Vector3 centerPivot = (start + end) * .5f;
+
+        centerPivot -= new Vector3(0, -centerOffset);
+
+        Vector3 startRelativeCenter = start - centerPivot;
+        Vector3 endRelativeCenter = end - centerPivot;
+
+        return Vector3.Slerp(startRelativeCenter, endRelativeCenter, t) + centerPivot;
+    }
+
     private void TransformRotation() {
 
 
-        string[] mask = new string[] { "Ground", "Ball" };
+        string[] mask = new string[] { "Ground", "Ball", "Enemy" };
 
         // if (moveData.wishFire2Down) {
         //     mask;
@@ -587,112 +628,99 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         //     mask = new string[] { "Focus" };
         // }
 
-        float aimAssistParam = 1f; // 1f - 4f
-        float retry = moveConfig.maxDistance / aimAssistParam;
-        float originalRad = 1f;
-        float rad = originalRad;
-        Vector3 castPos = avatarLookTransform.position + avatarLookForward * originalRad;
+        Vector3 castPos = avatarLookTransform.position;
         bool aimAssistOn = false;
         
         RaycastHit hit;
         // focusOnThis.position = Vector3.zero;
 
-        for (float i = 0; i < retry; i++) {
+        
+
+        for (float i = 1f; i <= moveConfig.maxDistance; i++) {
+
+            castPos = avatarLookTransform.position + avatarLookForward * i / 2f;
 
             Ray r = new Ray(castPos, avatarLookForward);
 
             if (Physics.SphereCast (
                 ray: r,
-                radius: rad,
+                radius: i / 2f,
                 hitInfo: out hit,
-                maxDistance: moveConfig.maxDistance - rad,
+                maxDistance: moveConfig.maxDistance - i,
                 layerMask: LayerMask.GetMask (mask),
                 queryTriggerInteraction: QueryTriggerInteraction.Ignore))
             {
+                
                 moveData.focusPoint = hit.point;
+                moveData.focusDir = (moveData.focusPoint - moveData.origin).normalized;
+                moveData.distanceFromFocus = (moveData.focusPoint - moveData.origin).magnitude;
                 moveData.focusNormal = hit.normal;
                 // aimAssistOn = true;
 
+                if (!moveData.wishFireDown) {
+
+                    if (LayerMask.LayerToName(hit.collider.gameObject.layer) == "Enemy") {
+                        moveData.targetPoint = hit.collider.transform.position;
+                        moveData.targetDir = (moveData.targetPoint - moveData.origin).normalized;
+                        moveData.distanceFromTarget = (moveData.targetPoint - moveData.origin).magnitude;
+                        currentTarget = hit.collider;
+                    } else {
+                        currentTarget = null;
+                        moveData.targetPoint = Vector3.zero;
+                        moveData.targetDir = Vector3.zero;
+                        moveData.distanceFromTarget = 0f;
+                    }
+
+                }
+
+
+
+
                 break;
             } else {
-                // moveData.focusPoint = cam.transform.position + viewForward * aimAssistParam;
-                moveData.focusPoint = lookAtThis.position;
+                moveData.focusPoint = avatarLookTransform.position + avatarLookForward * moveConfig.maxDistance / 2f;
+                // moveData.focusPoint = lookAtThis.position;
             }
 
-            rad += originalRad / 5f; // divide by 5 because fucking who knows UPDATE: the screen pixel to object ratio is 1/10. radius is half
-            castPos = avatarLookTransform.position + avatarLookForward * rad;
+        
 
         }
 
         focusOnThis.position = Vector3.Lerp(focusOnThis.position, moveData.focusPoint, Time.deltaTime * 10f);
 
-        // if (Physics.SphereCast (
-        //     ray: new Ray(moveData.origin, moveData.momentumVelocity.normalized),
-        //     radius: moveConfig.castRadius,
-        //     hitInfo: out hit,
-        //     maxDistance: moveConfig.maxDistance,
-        //     layerMask: LayerMask.GetMask (mask),
-        //     queryTriggerInteraction: QueryTriggerInteraction.Ignore))
-        // {
-        //     moveData.velocityPoint = hit.point;
-        //     moveData.velocityNormal = hit.normal;
-        // } else {
-        //     moveData.velocityPoint = Vector3.zero;
-        //     moveData.velocityNormal = Vector3.zero;
-        // }
 
         
-        Vector3 tPoint = cam.WorldToViewportPoint(avatarLookTransform.position);
-        tPoint.z = 0f;
-        centeredPoint = Vector3.Lerp(centeredPoint, (tPoint - new Vector3(.5f, .5f, 0f)) * 2f, Time.deltaTime * 10f);
+        Vector3 combinedLookPosition = Vector3.Lerp(lookAtThis.position, focusOnThis.position, focusAimBlend);
+        Quaternion combinedLookRotation = Quaternion.LookRotation((combinedLookPosition - avatarLookTransform.position).normalized, groundNormal);
 
-        mouseDeceleration = (1f - Mathf.Clamp01(centeredPoint.magnitude));
-
-        // xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier;
-		// yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier;
-
-		float response = 100f; // TODO:
-
-        if (moveData.momentumVelocity.magnitude > moveConfig.walkSpeed) {
-            avatarLookRotation = Quaternion.Slerp(avatarLookRotation, Quaternion.LookRotation((lookAtThis.position - avatarLookTransform.position).normalized, groundNormal), Time.deltaTime * 20f);
-            velocityRotation = Quaternion.LookRotation(moveData.momentumVelocity, groundNormal);
+        if (moveData.velocity.magnitude > moveConfig.walkSpeed) {
+            avatarLookRotation = Quaternion.Slerp(avatarLookRotation, combinedLookRotation, Time.deltaTime * 20f);
+            velocityRotation = Quaternion.LookRotation(moveData.velocity, groundNormal);
             bodyRotation = Quaternion.Slerp(bodyRotation, FlatLookRotation(viewForward), Time.deltaTime * 5f);
         } else {
-            avatarLookRotation = Quaternion.Slerp(avatarLookRotation, Quaternion.LookRotation((lookAtThis.position - avatarLookTransform.position).normalized, groundNormal), Time.deltaTime * 20f);
+            avatarLookRotation = Quaternion.Slerp(avatarLookRotation, combinedLookRotation, Time.deltaTime * 20f);
             bodyRotation = Quaternion.Slerp(bodyRotation, FlatLookRotation(viewForward), Time.deltaTime * 5f);
             velocityRotation = bodyRotation;
         }
 
         lineMat.SetFloat("_lineAlpha", 0f);
 
+        // Vector2 differenceInPixels = cam.WorldToScreenPoint(lookAtThis.position) - cam.WorldToScreenPoint(moveData.focusPoint);
 
-        // if (aimAssistOn) {
-        if (moveData.grappling) {
-            
-            // if (differenceInPixels.magnitude > (1f/aimAssistParam * 50f)) {
-            // if (differenceInPixels.magnitude > 50f) {
+        moveData.xAimDamp = Mathf.Lerp(moveData.xAimDamp, 1f, Time.deltaTime);
+        moveData.yAimDamp = Mathf.Lerp(moveData.yAimDamp, 1f, Time.deltaTime);
 
-                // float aimAssistY = Mathf.Lerp(0f, -differenceInPixels.y, Time.deltaTime); // screen space y goes top down
-                // float aimAssistX = Mathf.Lerp(0f, differenceInPixels.x, Time.deltaTime);
-
-                yMovement = Mathf.Lerp(0f, yMovement, .2f);
-                xMovement = Mathf.Lerp(0f, xMovement, .2f);
-
-                // yMovement = Mathf.Lerp(yMovement, aimAssistY, (differenceInPixels.magnitude)/100f);
-                // xMovement = Mathf.Lerp(xMovement, aimAssistX, (differenceInPixels.magnitude)/100f);
-
-            // }
-
-        }
+        xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier * moveData.xAimDamp;
+		yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier * moveData.yAimDamp;
 
         viewTransformLookAt.x = Mathf.Clamp(viewTransformLookAt.x + yMovement, moveConfig.minYRotation, moveConfig.maxYRotation) % 360f;
         viewTransformLookAt.y = viewTransformLookAt.y + xMovement % 360f;
         
-        avatarLookTransform.localPosition = groundNormal;
+        avatarLookTransform.localPosition = groundNormal; // TODO: reverse this
 
         viewRotation = 
         Quaternion.AngleAxis(viewTransformLookAt.y, Vector3.up) *
-        // Quaternion.AngleAxis(viewTransformLookAt.z, Vector3.forward) *
+        Quaternion.AngleAxis(viewTransformLookAt.z, Vector3.forward) *
         Quaternion.AngleAxis(viewTransformLookAt.x, Vector3.right);
 
         // _targetGroup.transform.rotation = viewRotation;
@@ -702,9 +730,9 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         // _vcam.SetActive(false);
         // _groupCam.SetActive(true);
-
-        lookAtThis.position = Vector3.Lerp(lookAtThis.position, cam.transform.position + cam.transform.forward * moveConfig.maxDistance * 5f, Time.deltaTime * 15f);
-
+        
+        Vector3 vanishingPoint = cam.transform.position + cam.transform.forward * moveConfig.maxDistance;
+        lookAtThis.position = Vector3.Lerp(lookAtThis.position, vanishingPoint, Time.deltaTime * 15f);
     }
 
     private void CameraStuff() { // TODO:
@@ -719,7 +747,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             framingCam.m_ScreenX = Mathf.Lerp(framingCam.m_ScreenX, 0.5f, Time.deltaTime);
         }
 
-        if (moveData.wishFire2Down || moveData.wishJumpDown) {
+        if (moveData.wishJumpDown) {
             virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 75f, Time.deltaTime * 4f);
         } else {
             virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 90f, Time.deltaTime * 2f);
@@ -731,7 +759,13 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         if (currentState.currentSubState.name == "neutral") {
 
             framingCam.m_LookaheadTime = 0f;
-            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 2.5f, Time.deltaTime * 2f);
+
+            if (moveData.velocity.magnitude < 15f) {
+                framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 3f, Time.deltaTime);
+            } else {
+                framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 9f, Time.deltaTime);
+            }
+            
             framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
             framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
             framingCam.m_DeadZoneHeight = 0f;
@@ -741,50 +775,39 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
             aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, 0f, Time.deltaTime * 2f);
             // framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
-        } else if (moveData.wishShiftDown || !moveData.grounded) {
+        } 
+        // else if (moveData.wishShiftDown || !moveData.grounded) {
             
-            // framingCam.m_LookaheadTime = Mathf.Lerp(framingCam.m_LookaheadTime, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) / 5f, Time.deltaTime);
-            // framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward) / 4f + 2f, 5f), Time.deltaTime * 2f);
-            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 5f, Time.deltaTime * 2f);
+        //     // framingCam.m_LookaheadTime = Mathf.Lerp(framingCam.m_LookaheadTime, Mathf.Clamp01(moveData.velocity.magnitude / moveConfig.runSpeed) / 5f, Time.deltaTime);
+        //     // framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.velocity, viewForward) / 4f + 2f, 5f), Time.deltaTime * 2f);
+        //     framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 3f, Time.deltaTime * 2f);
 
-            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
-            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
-            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
+        //     framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
+        //     framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
+        //     framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
             
-            framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
-            framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
-            framingCam.m_DeadZoneHeight = 0f;
-            framingCam.m_DeadZoneWidth = .333f;
-            
+        //     framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
+        //     framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
+        //     framingCam.m_DeadZoneHeight = 0f;
+        //     framingCam.m_DeadZoneWidth = .333f;
 
-            float dampingFunction = 0.5f + Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed);
+        //     float dampingFunction = 0.5f + Mathf.Clamp01(moveData.velocity.magnitude / moveConfig.runSpeed);
 
-            // framingCam.m_XDamping = dampingFunction * .75f;
-            // framingCam.m_YDamping = dampingFunction * .75f;
-            // vcam.m_ZDamping = dampingFunction * .75f;
+        //     // framingCam.m_XDamping = dampingFunction * .75f;
+        //     // framingCam.m_YDamping = dampingFunction * .75f;
+        //     // vcam.m_ZDamping = dampingFunction * .75f;
 
-            if (moveData.grounded) {
-                stability = Mathf.Lerp(stability, .5f, Time.deltaTime);
-            } else {
-                stability = Mathf.Lerp(stability, 1.5f, Time.deltaTime);
-            }
+        //     if (moveData.grounded) {
+        //         stability = Mathf.Lerp(stability, .5f, Time.deltaTime);
+        //     } else {
+        //         stability = Mathf.Lerp(stability, 1.5f, Time.deltaTime);
+        //     }
 
-            // aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.momentumVelocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
+        //     // aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.velocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
 
-            // framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
-        }
+        //     // framingCam.m_DeadZoneDepth = Mathf.Lerp(framingCam.m_DeadZoneDepth, 0f, Time.deltaTime * 4f);
+        // }
 
-    }
-
-    IEnumerable<Vector3> EvaluateSlerpPoints(Vector3 start, Vector3 end, Vector3 center,int count = 10) {
-        var startRelativeCenter = start - center;
-        var endRelativeCenter = end - center;
-
-        var f = 1f / count;
-
-        for (var i = 0f; i < 1 + f; i += f) {
-            yield return Vector3.Slerp(startRelativeCenter, endRelativeCenter, i) + center;
-        }
     }
 
     private void ConnectGrapple(Vector3 grapplePosition) {
@@ -798,7 +821,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         moveData.joint.autoConfigureConnectedAnchor = false;
         moveData.joint.connectedAnchor = moveData.grapplePoint;
 
-        moveData.distanceFromPoint = Vector3.Distance(moveData.origin, moveData.grapplePoint);
+        moveData.distanceFromGrapple = Vector3.Distance(moveData.origin, moveData.grapplePoint);
         moveData.grappling = true;
 
         // moveData.mousePosition = Vector3.zero;
@@ -808,8 +831,8 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     }
 
     public void StopGrapple() {
-        moveData.distanceFromPoint = 0;
-        moveData.grapplePoint = Vector3.zero;
+        // moveData.distanceFromGrapple = 0;
+        moveData.grapplePoint = focusOnThis.position;
         Destroy(moveData.joint);
 
         // bezierCurve.Clear();
@@ -843,7 +866,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         _lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
 
         
-        grappleArc.enabled = false;
+        grappleArc.enabled = true;
     }
 
     public void EraseRope() {
@@ -882,7 +905,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     //     // Debug.Log(Vector3.Dot(moveData.velocity, viewForward) * viewForward);
         
     //     grapple.transform.forward = viewForward;
-    //     grapple.GetComponent<Rigidbody>().velocity = viewForward * launchSpeed + Mathf.Max(Vector3.Dot(moveData.momentumVelocity, viewForward), 0f) * viewForward;
+    //     grapple.GetComponent<Rigidbody>().velocity = viewForward * launchSpeed + Mathf.Max(Vector3.Dot(moveData.velocity, viewForward), 0f) * viewForward;
         // StartCoroutine(GrappleRoutine());
     // }
 
@@ -890,7 +913,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         Ray ray = new Ray(avatarLookTransform.position + avatarLookForward * moveConfig.castRadius * 2f, avatarLookForward);
         RaycastHit hit;
 
-        if (Physics.SphereCast(ray, moveConfig.castRadius, out hit, distance, LayerMask.GetMask (new string[] { "Focus", "Ground" })))
+        if (Physics.SphereCast(ray, moveConfig.castRadius, out hit, distance, LayerMask.GetMask (new string[] { "Ground" })))
             ConnectGrapple(hit.point); // TODO: Startup animation
             
         moveData.grappleNormal = hit.normal;
@@ -945,7 +968,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         RaycastHit hit = RaycastTo(-groundNormal);
 
-        if (hit.collider == null || jumpTimer > 0f) {
+        if (hit.collider == null) {
 
             SetGround(null);
             groundNormal = Vector3.Lerp(groundNormal, Vector3.up, Time.deltaTime / 2f);
@@ -953,15 +976,28 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         } else {
 
+            lastContact = hit.point;
             groundNormal = hit.normal.normalized;
             SetGround(hit.collider.gameObject);
-            moveData.grounded = true;
-            lastContact = hit.point;
 
             if (Vector3.Distance(moveData.origin - groundNormal, lastContact) < .49f) {
                 moveData.origin += groundNormal * Mathf.Min(Time.deltaTime, .01f); // soft collision resolution?
-
             }
+
+            if (!moveData.grounded) {
+
+                if (Vector3.Dot(moveData.velocity, groundNormal) <= -7.5f) {
+                    smokeLand.SetVector3("velocity", Vector3.ProjectOnPlane(moveData.velocity / 2f, groundNormal));
+                    smokeLand.SetVector3("position", moveData.origin - groundNormal / 2f);
+                    smokeLand.SetVector3("eulerAngles", Quaternion.LookRotation(groundNormal, Vector3.ProjectOnPlane(-velocityForward, groundNormal)).eulerAngles);
+                    smokeLand.Play();
+                }
+                
+            }
+
+            doubleJump = true;
+
+            moveData.grounded = true;
 
         }
     }
@@ -997,31 +1033,31 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void ClampVelocity() {
 
-        float yVel = moveData.momentumVelocity.y;
-        moveData.momentumVelocity.y = 0f;
+        float yVel = moveData.velocity.y;
+        moveData.velocity.y = 0f;
 
-        moveData.momentumVelocity = Vector3.ClampMagnitude(moveData.momentumVelocity, moveConfig.maxVelocity);
-        moveData.momentumVelocity.y = Mathf.Max(yVel, -moveConfig.terminalVelocity);
-        moveData.momentumVelocity.y = Mathf.Min(moveData.momentumVelocity.y, moveConfig.terminalVelocity);
+        moveData.velocity = Vector3.ClampMagnitude(moveData.velocity, moveConfig.maxVelocity);
+        moveData.velocity.y = Mathf.Max(yVel, -moveConfig.terminalVelocity);
+        moveData.velocity.y = Mathf.Min(moveData.velocity.y, moveConfig.terminalVelocity);
 
     }
 
     private void ResolveCollisions() {
 
-        if ((moveData.momentumVelocity.sqrMagnitude) == 0f) {
+        if ((moveData.velocity.sqrMagnitude) == 0f) {
 
             // Do collisions while standing still
-            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
+            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.velocity, LayerMask.GetMask (new string[] { "Ground" }));
 
         } else {
 
             float maxDistPerFrame = 0.2f;
-            Vector3 velocityThisFrame = moveData.momentumVelocity * Time.deltaTime;
+            Vector3 velocityThisFrame = moveData.velocity * Time.deltaTime;
             moveData.origin += velocityThisFrame;
             float velocityDistLeft = velocityThisFrame.magnitude;
             float initialVel = velocityDistLeft;
 
-            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
+            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.velocity, LayerMask.GetMask (new string[] { "Ground" }));
             
             // while (velocityDistLeft > 0f) {
 
@@ -1034,7 +1070,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             //     moveData.origin += velThisLoop;
 
             //     // don't penetrate walls
-            //     DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.momentumVelocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
+            //     DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.velocity, LayerMask.GetMask (new string[] { "Ground", "Ball" }));
 
             // }
 
@@ -1136,12 +1172,16 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         if (lungeTimer > 0f) {
             lungeTimer -= Time.deltaTime;
         }
+
+        if (releaseTimer > 0f) {
+            releaseTimer -= Time.deltaTime;
+        }
         
     }
 
     private void UpdateInputData () {
 
-        moveData.distanceFromPoint = Vector3.Distance(moveData.origin, moveData.grapplePoint);
+        moveData.distanceFromGrapple = Vector3.Distance(moveData.origin, moveData.grapplePoint);
         moveData.grappleDir = (moveData.grapplePoint - avatarLookTransform.position).normalized;
         moveData.lookingAtPoint = Mathf.Clamp01(Vector3.Dot(avatarLookForward, moveData.grappleDir));
 
@@ -1153,7 +1193,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void OnTriggerEnter (Collider other) {
 
-
     }
 
     private void OnTriggerExit (Collider other) {
@@ -1161,5 +1200,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
 
     }
+
+    
   
 }

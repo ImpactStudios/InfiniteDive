@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerStateDive : PlayerBaseState {
 
     public PlayerStateDive(PlayerStateMachine currentContext, PlayerStateFactory playerStateFactory) : base (currentContext, playerStateFactory) {
-        _isMovementState = false;
+        _isRootState = false;
         name = "dive";
     }
 
@@ -27,12 +27,12 @@ public class PlayerStateDive : PlayerBaseState {
             }
         }
 
-        // if (ctx.moveData.momentumVelocity.magnitude < ctx.moveConfig.runSpeed) {
+        // if (ctx.moveData.velocity.magnitude < ctx.moveConfig.runSpeed) {
         //     Accelerate();
         // }
 
         // if (ctx.moveData.wishJumpDown && ctx.boostInputTimer <= 0f) {
-        //     CancelVelocityAgainst(-ctx.moveData.momentumVelocity.normalized, 1f);
+        //     CancelVelocityAgainst(-ctx.moveData.velocity.normalized, 1f);
         //     CancelVelocityAgainst(-Vector3.up, 5f);
         //     ctx.vcam.m_CameraDistance = Mathf.Lerp(ctx.vcam.m_CameraDistance, 3f, Time.deltaTime * 4f);
 
@@ -63,18 +63,15 @@ public class PlayerStateDive : PlayerBaseState {
 
     public override void CheckSwitchStates()
     {
-        if (ctx.moveData.wishFireDown) {
-            SwitchState(_factory.Melee());
-        } else if (!ctx.moveData.wishShiftDown) {
+        if (!ctx.moveData.wishShiftDown) {
             SwitchState(_factory.Fall());
-        } else if (ctx.moveData.grappling) {
-            SwitchState(_factory.Grapple());
         }
+        
     }
 
     private void MouseFly() {
         // ctx.ignoreGravityTimer = 1f;
-        DiveInfluenceVelocityMouseFly(ref ctx.moveData.momentumVelocity);
+        DiveInfluenceVelocityMouseFly(ref ctx.moveData.velocity);
 
     }
 
@@ -83,7 +80,7 @@ public class PlayerStateDive : PlayerBaseState {
     }
 
     private void Accelerate() {
-        ctx.moveData.momentumVelocity += (ctx.avatarLookForward * ctx.moveConfig.walkSpeed) * Time.deltaTime;
+        ctx.moveData.velocity += (ctx.avatarLookForward * ctx.moveConfig.walkSpeed) * Time.deltaTime;
     }
 
 }

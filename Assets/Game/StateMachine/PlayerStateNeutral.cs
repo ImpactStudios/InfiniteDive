@@ -5,13 +5,13 @@ using UnityEngine;
 public class PlayerStateNeutral : PlayerBaseState {
 
     public PlayerStateNeutral(PlayerStateMachine currentContext, PlayerStateFactory playerStateFactory) : base (currentContext, playerStateFactory) {
-        _isMovementState = false;
+        _isRootState = false;
         name = "neutral";
     }
 
     public override void EnterState()
     {
-        oldMomentum = Vector3.Scale(ctx.moveData.momentumVelocity, new Vector3(1f, 0f, 1f));
+        oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
         Debug.Log("ENTER NEUTRAL");
     }
 
@@ -20,7 +20,7 @@ public class PlayerStateNeutral : PlayerBaseState {
         OnlyInfluence();
 
         if (ctx.moveData.wishJumpUp) {
-            Jump(ctx.groundNormal, ctx.avatarLookForward);
+            BoostJump(ctx.avatarLookForward, Mathf.Max(ctx.moveData.velocity.magnitude, 20f));
             ctx.sphereLines.Stop();
         }
 
@@ -40,14 +40,19 @@ public class PlayerStateNeutral : PlayerBaseState {
     public override void CheckSwitchStates()
     {
         if (ctx.moveData.wishFireDown) {
-            SwitchState(_factory.Melee());
-        } else if (ctx.moveData.wishShiftDown) {
+            SwitchState(factory.Lunge());
+        }
+
+        else if (ctx.moveData.wishShiftDown) {
             oldMomentum = Vector3.zero;
             SwitchState(_factory.Dash());
-        } else if (ctx.moveData.grappling) {
-            oldMomentum = Vector3.zero;
-            SwitchState(_factory.Grapple());
+        } 
+        else if (!ctx.moveData.grounded) {
+            SwitchState(factory.Fall());
         }
+        // else if (ctx.moveData.grappling) {
+        //     SwitchState(_factory.Grapple());
+        // }
 
     }
 

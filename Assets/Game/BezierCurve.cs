@@ -34,7 +34,7 @@ public class BezierCurve : MonoBehaviour
     GameObject yPoint = null;
     GameObject zPoint = null;
     GameObject lookPoint = null;
-    GameObject arrow = null;
+    public GameObject arrow = null;
     
     CatmullRomCurve[] catmullRomSegments;
 
@@ -75,14 +75,14 @@ public class BezierCurve : MonoBehaviour
         }
 
 
-        arrow = new GameObject();
-        arrow.name = "arrow";
-        arrow.transform.SetParent(controlPoints[3].transform);
+        // arrow = new GameObject();
+        // arrow.name = "arrow";
+        // arrow.transform.SetParent(controlPoints[3].transform);
 
-        MeshFilter meshFilter = arrow.AddComponent<MeshFilter>();
-        MeshRenderer meshRender = arrow.AddComponent<MeshRenderer>();
-        meshRender.material = Resources.Load("Materials/OrangeEmission") as Material;
-        meshFilter.mesh = Resources.Load("Meshes/Arrow") as Mesh;
+        // MeshFilter meshFilter = arrow.AddComponent<MeshFilter>();
+        // MeshRenderer meshRender = arrow.AddComponent<MeshRenderer>();
+        // meshRender.material = Resources.Load("Materials/OrangeEmission") as Material;
+        // meshFilter.mesh = Resources.Load("Meshes/Arrow") as Mesh;
         
 
         // CreateArcFromVelocity(contactNormal, target);
@@ -93,26 +93,26 @@ public class BezierCurve : MonoBehaviour
 
     public void DrawCurve() {
 
-        lr.positionCount = 9;
+        // lr.positionCount = 9;
         
-        lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
+        // lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
         
-        lr.SetPosition(0, GetBezierPoint(.1f).pos);
-        lr.SetPosition(1, GetBezierPoint(.2f).pos);
-        lr.SetPosition(2, GetBezierPoint(.3f).pos);
-        lr.SetPosition(3, GetBezierPoint(.4f).pos);
-        lr.SetPosition(4, GetBezierPoint(.5f).pos);
-        lr.SetPosition(5, GetBezierPoint(.6f).pos);
-        lr.SetPosition(6, GetBezierPoint(.7f).pos);
-        lr.SetPosition(7, GetBezierPoint(.8f).pos);
-        lr.SetPosition(8, GetBezierPoint(.99f).pos);
+        // lr.SetPosition(0, GetBezierPoint(.1f).pos);
+        // lr.SetPosition(1, GetBezierPoint(.2f).pos);
+        // lr.SetPosition(2, GetBezierPoint(.3f).pos);
+        // lr.SetPosition(3, GetBezierPoint(.4f).pos);
+        // lr.SetPosition(4, GetBezierPoint(.5f).pos);
+        // lr.SetPosition(5, GetBezierPoint(.6f).pos);
+        // lr.SetPosition(6, GetBezierPoint(.7f).pos);
+        // lr.SetPosition(7, GetBezierPoint(.8f).pos);
+        // lr.SetPosition(8, GetBezierPoint(.99f).pos);
 
-        Vector3 p1 = GetBezierPoint(.333f).pos;
-        Vector3 p2 = GetBezierPoint(.666f).pos;
+        // Vector3 p1 = GetBezierPoint(.333f).pos;
+        // Vector3 p2 = GetBezierPoint(.666f).pos;
         
         ctx._grappleArc.SetVector3("Pos0", ctx.moveData.origin + ctx.avatarLookForward);
-        ctx._grappleArc.SetVector3("Pos1", p1);
-        ctx._grappleArc.SetVector3("Pos2", p2);
+        ctx._grappleArc.SetVector3("Pos1", Vector3.Lerp(ctx.moveData.origin, ctx.moveData.grapplePoint, .33f));
+        ctx._grappleArc.SetVector3("Pos2", Vector3.Lerp(ctx.moveData.origin, ctx.moveData.grapplePoint, .66f));
         ctx._grappleArc.SetVector3("Pos3", ctx.moveData.grapplePoint);
         ctx._grappleArc.SetVector4("Color", ctx.moveConfig.grappleColor);
 
@@ -190,10 +190,11 @@ public class BezierCurve : MonoBehaviour
 
     }
 
+
     public void GrappleArc(Vector3 contactNormal, Vector3 target) {
 
-        var initialVelocityDir = ctx.moveData.momentumVelocity.normalized;
-        initialVelocityMag = ctx.moveData.momentumVelocity.magnitude;
+        var initialVelocityDir = ctx.moveData.velocity.normalized;
+        initialVelocityMag = ctx.moveData.velocity.magnitude;
 
         Vector3 centerPoint = Vector3.Lerp(ctx.moveData.origin, target, .95f);
         Vector3 hyp = centerPoint - ctx.moveData.origin;
@@ -288,7 +289,7 @@ public class BezierCurve : MonoBehaviour
 
         // Vector3 avatarTrajectoryDir = (lookPoint.transform.position - ctx.moveData.origin).normalized;
 
-        Vector3 influenceVel = (ctx.avatarLookForward).normalized  * (ctx.moveData.distanceFromPoint / 2f);
+        Vector3 influenceVel = (ctx.avatarLookForward).normalized  * (hyp.magnitude / 2f);
         Vector3 influenceVel2 = (initialVelocityDir + ctx.avatarLookForward).normalized  * (initialVelocityMag + 1f);
 
         Vector3 contactProjectedVel = ProjectOnTwoPlanes(hyp.normalized, contactNormal, influenceVel);
@@ -316,7 +317,7 @@ public class BezierCurve : MonoBehaviour
         controlPoints[3].transform.position = centerPoint;
 
         if (false) {
-            swingOffset = Vector3.Lerp(swingOffset, Vector3.Reflect(ctx.moveData.momentumVelocity, hypeUp), Time.deltaTime * 2f);
+            swingOffset = Vector3.Lerp(swingOffset, Vector3.Reflect(ctx.moveData.velocity, hypeUp), Time.deltaTime * 2f);
             lookingAtPoint = Mathf.Lerp(lookingAtPoint, .4f, Time.deltaTime);
             contactOffset = Vector3.Lerp(contactOffset, Vector3.zero, Time.deltaTime);
         } else {
@@ -325,27 +326,323 @@ public class BezierCurve : MonoBehaviour
             contactOffset = Vector3.Reflect(contactProjectedVel, hyp.normalized);
         }
 
-        controlPoints[3].transform.rotation = Quaternion.LookRotation(-contactProjectedVel, contactNormal);
+        // arrow.transform.rotation = Quaternion.LookRotation(-contactProjectedVel, contactNormal);
 
         totalDistance = ApproximateArcLength();
         // estimatedTime = totalDistance / Mathf.Max(initialVelocityMag, 15f);
-        estimatedVelocity = Mathf.Max(initialVelocityMag, ctx.moveConfig.runSpeed - 5f) + 5f;
+        estimatedVelocity = Mathf.Max(initialVelocityMag, ctx.moveConfig.runSpeed);
         estimatedTime = totalDistance / estimatedVelocity;
+
+        
+
+        DrawCurve();
 
     }
 
     /*         controlPoints[0].transform.position = ctx.moveData.origin;
         controlPoints[1].transform.position = ctx.moveData.origin + contactProjectedVel2;
         
-        controlPoints[2].transform.position = Vector3.Lerp(centerPoint + ctx.moveData.momentumVelocity, controlPoints[1].transform.position, lookingAtPoint / 2f + .1f) + Vector3.Reflect(contactProjectedVel, hyp.normalized);
+        controlPoints[2].transform.position = Vector3.Lerp(centerPoint + ctx.moveData.velocity, controlPoints[1].transform.position, lookingAtPoint / 2f + .1f) + Vector3.Reflect(contactProjectedVel, hyp.normalized);
         // controlPoints[2].transform.position = centerPoint + contactProjectedVel * 4f;
-        controlPoints[3].transform.position = centerPoint + ctx.moveData.momentumVelocity;
+        controlPoints[3].transform.position = centerPoint + ctx.moveData.velocity;
 */
+
+    public void FlyByArc(Vector3 contactNormal, Vector3 target) {
+
+        var initialVelocityDir = ctx.moveData.velocity.normalized;
+        initialVelocityMag = ctx.moveData.velocity.magnitude;
+
+        Vector3 centerPoint = Vector3.Lerp(ctx.moveData.origin, target, .95f);
+        Vector3 hyp = centerPoint - ctx.moveData.origin;
+
+
+        // Quaternion YRotate = Quaternion.AngleAxis(90f, Vector3.up);
+        // Quaternion XRotate = Quaternion.AngleAxis(90f, Vector3.right);
+        // Quaternion ZRotate = Quaternion.AngleAxis(90f, Vector3.forward);
+        
+        Vector3 contactX = Vector3.zero;
+        Vector3 contactY = Vector3.zero;
+
+        Vector3.OrthoNormalize(ref contactNormal, ref contactY, ref contactX);
+
+        if (Vector3.Dot(contactX, -hyp.normalized) < 0f) contactX *= -1f;
+        if (Vector3.Dot(contactY, -hyp.normalized) < 0f) contactY *= -1f;
+
+        float zoneRadius = hyp.magnitude * 10f;
+        Vector3 zoneScale = Vector3.one * zoneRadius / 5f; // half of ten
+
+        Plane hypPlane = new Plane(hyp.normalized, centerPoint);
+
+        // Plane contactPlaneZ = new Plane(contactNormal, centerPoint - zoneRadius * contactNormal);
+        // Plane contactPlaneX = new Plane(contactX, centerPoint - zoneRadius * contactX);
+        // Plane contactPlaneY = new Plane(contactY, centerPoint - zoneRadius * contactY);
+
+        if (zPlaneObj == null) {
+
+            // xPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // xPoint.name = "xpoint";
+            // yPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // yPoint.name = "ypoint";
+            // zPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // zPoint.name = "zpoint";
+
+            // Material m3 = Resources.Load("Materials/Invisible") as Material;
+
+            // lookPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // lookPoint.name = "lookPoint";
+            // lookPoint.GetComponent<MeshRenderer>().material = m3;
+
+            // xPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            // yPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            // zPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+
+            // xPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+            // yPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+            // zPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+
+
+            // xPlaneObj.GetComponent<MeshRenderer>().material = m3;
+            // yPlaneObj.GetComponent<MeshRenderer>().material = m3;
+            // zPlaneObj.GetComponent<MeshRenderer>().material = m3;
+
+        }
+
+        // xPlaneObj.transform.position = centerPoint - zoneRadius * contactX;
+        // yPlaneObj.transform.position = centerPoint - zoneRadius * contactY;
+        // zPlaneObj.transform.position = centerPoint - zoneRadius * contactNormal;
+
+        // xPlaneObj.transform.LookAt(centerPoint);
+        // zPlaneObj.transform.LookAt(centerPoint);
+        // yPlaneObj.transform.rotation = zPlaneObj.transform.rotation;
+
+        // xPlaneObj.transform.Rotate(90f, 0f, 0f);
+        // zPlaneObj.transform.Rotate(90f, 0f, 0f);
+        // yPlaneObj.transform.Rotate(180f, 0f, 0f);
+
+        // xPlaneObj.transform.localScale = zoneScale;
+        // yPlaneObj.transform.localScale = zoneScale;
+        // zPlaneObj.transform.localScale = zoneScale;
+
+        // float zd;
+        // float xd;
+        // float yd;
+
+        // Ray ray = new Ray(ctx.cam.transform.position, ctx.viewForward);
+        // RaycastHit hit;
+
+        // Physics.SphereCast(ray, 1f + (initialVelocityMag / ctx.moveConfig.runSpeed), out hit, 5000f, LayerMask.GetMask (new string[] { "Trajectory" }));
+        
+        // contactPlaneZ.Raycast(ray, out zd);
+        // contactPlaneX.Raycast(ray, out xd);
+        // contactPlaneY.Raycast(ray, out yd);
+
+        // xPoint.transform.position = ctx.moveData.origin + ctx.viewForward * xd;
+        // yPoint.transform.position = ctx.moveData.origin + ctx.viewForward * yd;
+        // zPoint.transform.position = ctx.moveData.origin + ctx.viewForward * zd;
+
+        // Vector3 zoneTrajectoryPoint = ctx.cam.transform.position + ctx.viewForward * hit.distance;
+        // lookPoint.transform.position = zoneTrajectoryPoint;
+
+        // Vector3 avatarTrajectoryDir = (lookPoint.transform.position - ctx.moveData.origin).normalized;
+
+        Vector3 influenceVel = (ctx.avatarLookForward).normalized  * (hyp.magnitude / 2f);
+        Vector3 influenceVel2 = (initialVelocityDir + ctx.avatarLookForward).normalized  * (initialVelocityMag + 1f);
+
+        Vector3 contactProjectedVel = ProjectOnTwoPlanes(hyp.normalized, contactNormal, influenceVel);
+        Vector3 contactProjectedVel2 = ProjectOnTwoPlanes(hyp.normalized, contactNormal, influenceVel2);
+
+        Vector3 hypeUp = Vector3.Cross(hyp.normalized, influenceVel2.normalized).normalized;
+
+        Vector3 test = ProjectOnTwoPlanes(contactNormal, hyp.normalized, influenceVel);
+
+        // Debug.Log(Vector3.ProjectOnPlane(contactProjectedVel, contactNormal) + " " + test);
+
+        // Vector3 endTrajectory = zoneTrajectoryPoint - centerPoint + influenceVel2;
+
+        // Plane trajectoryPlane = new Plane(ctx.moveData.origin, centerPoint, zoneTrajectoryPoint);
+        // Vector3 trajectoryNormal = trajectoryPlane.normal;
+
+        // Vector3 circularProjectedVel = Vector3.ProjectOnPlane(influenceVel, trajectoryNormal);
+
+        
+
+        controlPoints[0].transform.position = ctx.moveData.origin;
+        controlPoints[1].transform.position = Vector3.Lerp(ctx.moveData.origin, centerPoint, .33f) + contactProjectedVel * .33f;
+        
+        controlPoints[2].transform.position = Vector3.Lerp(ctx.moveData.origin, centerPoint, .66f) + contactProjectedVel * .66f;
+        controlPoints[3].transform.position = centerPoint  + contactProjectedVel;
+
+        if (false) {
+            swingOffset = Vector3.Lerp(swingOffset, Vector3.Reflect(ctx.moveData.velocity, hypeUp), Time.deltaTime * 2f);
+            lookingAtPoint = Mathf.Lerp(lookingAtPoint, .4f, Time.deltaTime);
+            contactOffset = Vector3.Lerp(contactOffset, Vector3.zero, Time.deltaTime);
+        } else {
+            swingOffset = Vector3.Lerp(swingOffset, Vector3.zero, Time.deltaTime * 2f);
+            lookingAtPoint = Mathf.Clamp01(Vector3.Dot(ctx.avatarLookForward, hyp.normalized));
+            contactOffset = Vector3.Reflect(contactProjectedVel, hyp.normalized);
+        }
+
+        // controlPoints[3].transform.rotation = Quaternion.LookRotation(-contactProjectedVel, contactNormal);
+
+        totalDistance = ApproximateArcLength();
+        // estimatedTime = totalDistance / Mathf.Max(initialVelocityMag, 15f);
+        estimatedVelocity = Mathf.Max(initialVelocityMag, ctx.moveConfig.runSpeed - 5f);
+        estimatedTime = totalDistance / estimatedVelocity;
+
+        DrawCurve();
+
+    }
+
+    public void ReachAroundArc(Vector3 contactNormal, Vector3 target) {
+
+        var initialVelocityDir = ctx.moveData.velocity.normalized;
+        initialVelocityMag = ctx.moveData.velocity.magnitude;
+
+        Vector3 centerPoint = Vector3.Lerp(ctx.moveData.origin, target, .95f);
+        Vector3 hyp = centerPoint - ctx.moveData.origin;
+
+
+        // Quaternion YRotate = Quaternion.AngleAxis(90f, Vector3.up);
+        // Quaternion XRotate = Quaternion.AngleAxis(90f, Vector3.right);
+        // Quaternion ZRotate = Quaternion.AngleAxis(90f, Vector3.forward);
+        
+        Vector3 contactX = Vector3.zero;
+        Vector3 contactY = Vector3.zero;
+
+        Vector3.OrthoNormalize(ref contactNormal, ref contactY, ref contactX);
+
+        if (Vector3.Dot(contactX, -hyp.normalized) < 0f) contactX *= -1f;
+        if (Vector3.Dot(contactY, -hyp.normalized) < 0f) contactY *= -1f;
+
+        float zoneRadius = hyp.magnitude * 10f;
+        Vector3 zoneScale = Vector3.one * zoneRadius / 5f; // half of ten
+
+        Plane hypPlane = new Plane(hyp.normalized, centerPoint);
+
+        // Plane contactPlaneZ = new Plane(contactNormal, centerPoint - zoneRadius * contactNormal);
+        // Plane contactPlaneX = new Plane(contactX, centerPoint - zoneRadius * contactX);
+        // Plane contactPlaneY = new Plane(contactY, centerPoint - zoneRadius * contactY);
+
+        if (zPlaneObj == null) {
+
+            // xPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // xPoint.name = "xpoint";
+            // yPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // yPoint.name = "ypoint";
+            // zPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // zPoint.name = "zpoint";
+
+            // Material m3 = Resources.Load("Materials/Invisible") as Material;
+
+            // lookPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // lookPoint.name = "lookPoint";
+            // lookPoint.GetComponent<MeshRenderer>().material = m3;
+
+            // xPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            // yPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            // zPlaneObj = GameObject.CreatePrimitive(PrimitiveType.Plane);
+
+            // xPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+            // yPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+            // zPlaneObj.layer = LayerMask.NameToLayer("Trajectory");
+
+
+            // xPlaneObj.GetComponent<MeshRenderer>().material = m3;
+            // yPlaneObj.GetComponent<MeshRenderer>().material = m3;
+            // zPlaneObj.GetComponent<MeshRenderer>().material = m3;
+
+        }
+
+        // xPlaneObj.transform.position = centerPoint - zoneRadius * contactX;
+        // yPlaneObj.transform.position = centerPoint - zoneRadius * contactY;
+        // zPlaneObj.transform.position = centerPoint - zoneRadius * contactNormal;
+
+        // xPlaneObj.transform.LookAt(centerPoint);
+        // zPlaneObj.transform.LookAt(centerPoint);
+        // yPlaneObj.transform.rotation = zPlaneObj.transform.rotation;
+
+        // xPlaneObj.transform.Rotate(90f, 0f, 0f);
+        // zPlaneObj.transform.Rotate(90f, 0f, 0f);
+        // yPlaneObj.transform.Rotate(180f, 0f, 0f);
+
+        // xPlaneObj.transform.localScale = zoneScale;
+        // yPlaneObj.transform.localScale = zoneScale;
+        // zPlaneObj.transform.localScale = zoneScale;
+
+        // float zd;
+        // float xd;
+        // float yd;
+
+        // Ray ray = new Ray(ctx.cam.transform.position, ctx.viewForward);
+        // RaycastHit hit;
+
+        // Physics.SphereCast(ray, 1f + (initialVelocityMag / ctx.moveConfig.runSpeed), out hit, 5000f, LayerMask.GetMask (new string[] { "Trajectory" }));
+        
+        // contactPlaneZ.Raycast(ray, out zd);
+        // contactPlaneX.Raycast(ray, out xd);
+        // contactPlaneY.Raycast(ray, out yd);
+
+        // xPoint.transform.position = ctx.moveData.origin + ctx.viewForward * xd;
+        // yPoint.transform.position = ctx.moveData.origin + ctx.viewForward * yd;
+        // zPoint.transform.position = ctx.moveData.origin + ctx.viewForward * zd;
+
+        // Vector3 zoneTrajectoryPoint = ctx.cam.transform.position + ctx.viewForward * hit.distance;
+        // lookPoint.transform.position = zoneTrajectoryPoint;
+
+        // Vector3 avatarTrajectoryDir = (lookPoint.transform.position - ctx.moveData.origin).normalized;
+
+        Vector3 influenceVel = (ctx.avatarLookForward).normalized  * (hyp.magnitude / 2f);
+        Vector3 influenceVel2 = (initialVelocityDir + ctx.avatarLookForward).normalized  * (initialVelocityMag + 1f);
+
+        Vector3 contactProjectedVel = ProjectOnTwoPlanes(hyp.normalized, contactNormal, influenceVel);
+        Vector3 contactProjectedVel2 = ProjectOnTwoPlanes(hyp.normalized, contactNormal, influenceVel2);
+
+        Vector3 hypeUp = Vector3.Cross(hyp.normalized, influenceVel2.normalized).normalized;
+
+        Vector3 test = ProjectOnTwoPlanes(contactNormal, hyp.normalized, influenceVel);
+
+        // Debug.Log(Vector3.ProjectOnPlane(contactProjectedVel, contactNormal) + " " + test);
+
+        // Vector3 endTrajectory = zoneTrajectoryPoint - centerPoint + influenceVel2;
+
+        // Plane trajectoryPlane = new Plane(ctx.moveData.origin, centerPoint, zoneTrajectoryPoint);
+        // Vector3 trajectoryNormal = trajectoryPlane.normal;
+
+        // Vector3 circularProjectedVel = Vector3.ProjectOnPlane(influenceVel, trajectoryNormal);
+
+        
+
+        controlPoints[0].transform.position = ctx.moveData.origin;
+        controlPoints[1].transform.position = ctx.moveData.origin + contactProjectedVel + (1f - lookingAtPoint) * hyp.normalized / 2f;
+        
+        controlPoints[2].transform.position = centerPoint + contactOffset + (1f - lookingAtPoint) * hyp.normalized;
+        controlPoints[3].transform.position = centerPoint + contactOffset / 4f + (1f - lookingAtPoint) * hyp.normalized * 2f;
+
+        if (false) {
+            swingOffset = Vector3.Lerp(swingOffset, Vector3.Reflect(ctx.moveData.velocity, hypeUp), Time.deltaTime * 2f);
+            lookingAtPoint = Mathf.Lerp(lookingAtPoint, .4f, Time.deltaTime);
+            contactOffset = Vector3.Lerp(contactOffset, Vector3.zero, Time.deltaTime);
+        } else {
+            swingOffset = Vector3.Lerp(swingOffset, Vector3.zero, Time.deltaTime * 2f);
+            lookingAtPoint = Mathf.Clamp01(Vector3.Dot(ctx.avatarLookForward, hyp.normalized));
+            contactOffset = Vector3.Reflect(contactProjectedVel, hyp.normalized);
+        }
+
+        // controlPoints[3].transform.rotation = Quaternion.LookRotation(-contactProjectedVel, contactNormal);
+
+        totalDistance = ApproximateArcLength();
+        // estimatedTime = totalDistance / Mathf.Max(initialVelocityMag, 15f);
+        estimatedVelocity = Mathf.Max(initialVelocityMag, ctx.moveConfig.runSpeed - 5f) + 5f;
+        estimatedTime = totalDistance / estimatedVelocity;
+
+        DrawCurve();
+
+    }
 
     public void AttackArc(Vector3 contactNormal, Vector3 target) {
 
-        var initialVelocityDir = ctx.moveData.momentumVelocity.normalized;
-        initialVelocityMag = ctx.moveData.momentumVelocity.magnitude;
+        var initialVelocityDir = ctx.moveData.velocity.normalized;
+        initialVelocityMag = ctx.moveData.velocity.magnitude;
 
         Vector3 centerPoint = Vector3.Lerp(ctx.moveData.origin, target, .95f);
         Vector3 hyp = centerPoint - ctx.moveData.origin;
@@ -496,8 +793,8 @@ public class BezierCurve : MonoBehaviour
 
         // Debug.Log(estimatedTime);
 
-        ctx.moveData.momentumVelocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
-        // ctx.moveData.momentumVelocity = Vector3.Lerp(ctx.moveData.momentumVelocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
+        ctx.moveData.velocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
+        // ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
         ctx.moveData.origin = op.pos;
     }
 
@@ -505,9 +802,9 @@ public class BezierCurve : MonoBehaviour
 
         OrientedPoint op = GetBezierPoint( Mathf.Min(t / estimatedTime, .95f ));
 
-        // ctx.moveData.momentumVelocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
-        // ctx.moveData.momentumVelocity = Vector3.Lerp(ctx.moveData.momentumVelocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
-        ctx.moveData.momentumVelocity = (op.rot * Vector3.forward) * (estimatedVelocity);
+        // ctx.moveData.velocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
+        // ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
+        ctx.moveData.velocity = (op.rot * Vector3.forward) * (estimatedVelocity);
         ctx.moveData.origin = Vector3.Lerp(ctx.moveData.origin, op.pos, Time.deltaTime * 2f);
     }
 
@@ -550,7 +847,7 @@ public class BezierCurve : MonoBehaviour
     //     float grappleVelocityMag = 10f * centerForce;
 
     //     projectedVelocity = grappleVelocityMag * gTargetDir + velocityOrthagonal;
-    //     // ctx.moveData.momentumVelocity = projectedVelocity;
+    //     // ctx.moveData.velocity = projectedVelocity;
 
     //     float future_t = 0f;
 
@@ -580,7 +877,7 @@ public class BezierCurve : MonoBehaviour
     // }
 
     public void CancelVelocityAgainst(Vector3 wishDir) {
-        ctx.moveData.momentumVelocity += Vector3.Dot(ctx.moveData.momentumVelocity, -wishDir) * wishDir;
+        ctx.moveData.velocity += Vector3.Dot(ctx.moveData.velocity, -wishDir) * wishDir;
     }
 
     Quaternion GetBezierOrientation( float t ) {

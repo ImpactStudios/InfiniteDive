@@ -116,6 +116,42 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Param1"",
+                    ""type"": ""Button"",
+                    ""id"": ""e9bfe73c-188c-4348-8691-dd217d1ee731"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Param2"",
+                    ""type"": ""Button"",
+                    ""id"": ""f08e5a74-95e8-4b24-a340-b5988b7215c6"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Param3"",
+                    ""type"": ""Button"",
+                    ""id"": ""f0f6ef97-8015-41ec-971a-a0b50f152ef1"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Param4"",
+                    ""type"": ""Button"",
+                    ""id"": ""130108f5-0842-4bdc-8136-ad31de132466"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -358,6 +394,50 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Escape"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b560c53d-b443-4d30-a111-66c1096b5630"",
+                    ""path"": ""<Keyboard>/7"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Param1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""eb108806-6447-400d-bfbf-a0777a0d1913"",
+                    ""path"": ""<Keyboard>/8"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Param2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c043f8ba-9cc6-4bca-9a35-7d1a649935e6"",
+                    ""path"": ""<Keyboard>/9"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Param3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""cee6ed0b-ff8a-4f88-af6e-a36815378999"",
+                    ""path"": ""<Keyboard>/0"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Param4"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -955,6 +1035,10 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         m_Player_Shift = m_Player.FindAction("Shift", throwIfNotFound: true);
         m_Player_Fire2 = m_Player.FindAction("Fire2", throwIfNotFound: true);
         m_Player_Escape = m_Player.FindAction("Escape", throwIfNotFound: true);
+        m_Player_Param1 = m_Player.FindAction("Param1", throwIfNotFound: true);
+        m_Player_Param2 = m_Player.FindAction("Param2", throwIfNotFound: true);
+        m_Player_Param3 = m_Player.FindAction("Param3", throwIfNotFound: true);
+        m_Player_Param4 = m_Player.FindAction("Param4", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1036,6 +1120,10 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Shift;
     private readonly InputAction m_Player_Fire2;
     private readonly InputAction m_Player_Escape;
+    private readonly InputAction m_Player_Param1;
+    private readonly InputAction m_Player_Param2;
+    private readonly InputAction m_Player_Param3;
+    private readonly InputAction m_Player_Param4;
     public struct PlayerActions
     {
         private @PlayerControls m_Wrapper;
@@ -1050,6 +1138,10 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         public InputAction @Shift => m_Wrapper.m_Player_Shift;
         public InputAction @Fire2 => m_Wrapper.m_Player_Fire2;
         public InputAction @Escape => m_Wrapper.m_Player_Escape;
+        public InputAction @Param1 => m_Wrapper.m_Player_Param1;
+        public InputAction @Param2 => m_Wrapper.m_Player_Param2;
+        public InputAction @Param3 => m_Wrapper.m_Player_Param3;
+        public InputAction @Param4 => m_Wrapper.m_Player_Param4;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1089,6 +1181,18 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @Escape.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscape;
                 @Escape.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscape;
                 @Escape.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscape;
+                @Param1.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam1;
+                @Param1.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam1;
+                @Param1.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam1;
+                @Param2.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam2;
+                @Param2.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam2;
+                @Param2.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam2;
+                @Param3.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam3;
+                @Param3.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam3;
+                @Param3.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam3;
+                @Param4.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam4;
+                @Param4.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam4;
+                @Param4.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnParam4;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -1123,6 +1227,18 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @Escape.started += instance.OnEscape;
                 @Escape.performed += instance.OnEscape;
                 @Escape.canceled += instance.OnEscape;
+                @Param1.started += instance.OnParam1;
+                @Param1.performed += instance.OnParam1;
+                @Param1.canceled += instance.OnParam1;
+                @Param2.started += instance.OnParam2;
+                @Param2.performed += instance.OnParam2;
+                @Param2.canceled += instance.OnParam2;
+                @Param3.started += instance.OnParam3;
+                @Param3.performed += instance.OnParam3;
+                @Param3.canceled += instance.OnParam3;
+                @Param4.started += instance.OnParam4;
+                @Param4.performed += instance.OnParam4;
+                @Param4.canceled += instance.OnParam4;
             }
         }
     }
@@ -1289,6 +1405,10 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         void OnShift(InputAction.CallbackContext context);
         void OnFire2(InputAction.CallbackContext context);
         void OnEscape(InputAction.CallbackContext context);
+        void OnParam1(InputAction.CallbackContext context);
+        void OnParam2(InputAction.CallbackContext context);
+        void OnParam3(InputAction.CallbackContext context);
+        void OnParam4(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

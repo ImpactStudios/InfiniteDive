@@ -1,22 +1,19 @@
 ﻿using UnityEngine;
 
 [System.Serializable]
-public class MoveData {
+public class MoveData : MonoBehaviour {
 
     ///// Fields /////
 
     // Core Data
     
     public Vector3 origin;
-    public Vector3 momentumVelocity;
-    public Vector3 flatMomentumVelocity;
-    public Vector3 influenceVelocity;
-    public Vector3 influenceMouse;
+    public Vector3 velocity;
+    public Vector3 flatVelocity;
+    public Vector3 inputDir;
     public Quaternion velocityRot;
     public Vector2 mouseDelta;
     public Vector2 mousePosition;
-    public float vMeter = 0f;
-    public float pMeter = 0f;
 
     // Input
     
@@ -35,6 +32,7 @@ public class MoveData {
     public bool wishEscapeDown = false;
     public bool wishFireDown = false;
     public bool wishFireUp = false;
+    public bool wishFirePress = false;
     public bool wishFire2Down = false;
     public bool wishFire2Up = false;
     public bool wishFire2Press = false;
@@ -45,13 +43,13 @@ public class MoveData {
     public bool attacking = false;
     public bool grounded = false;
     public bool detectWall = false;
-    public bool bladeMode = false;
+
 
     // Grapple
 
     public Vector3 grapplePoint;
     public SpringJoint joint;
-    public float distanceFromPoint = 0f;
+    public float distanceFromGrapple = 0f;
     public Vector3 grappleNormal;
     public Vector3 grappleDir;
     public float lookingAtPoint;
@@ -61,8 +59,7 @@ public class MoveData {
     public Vector3 focusPoint;
     public Vector3 focusNormal;
     public Vector3 focusDir;
-    public Vector3 velocityPoint;
-    public Vector3 velocityNormal;
+    public float distanceFromFocus = 0f;
     public Vector3 screenFocusPoint;
     public Vector3 screenLookAtPoint;
 
@@ -73,6 +70,8 @@ public class MoveData {
     public float distanceFromTarget = 0f;
     public Vector3 wallNormal;
     public float vCharge;
+    public float xAimDamp;
+    public float yAimDamp;
 
     public Collider[] targets;
 

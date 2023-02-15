@@ -5,7 +5,7 @@ using UnityEngine.VFX;
 public interface IDiveControllable {
 
     MoveData moveData { get; }
-    MovementConfig moveConfig { get; }
+    MoveConfig moveConfig { get; }
     Camera cam { get; set; }
     CapsuleCollider playerCollider { get; }
     GameObject groundObject { get; set; }

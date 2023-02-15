@@ -10796,7 +10796,7 @@ MonoBehaviour:
     maxYRotation: 89
   _moveData:
     origin: {x: 0, y: 0, z: 0}
-    momentumVelocity: {x: 0, y: 0, z: 0}
+    velocity: {x: 0, y: 0, z: 0}
     influenceVelocity: {x: 0, y: 0, z: 0}
     influenceMouse: {x: 0, y: 0, z: 0}
     velocityRot: {x: 0, y: 0, z: 0, w: 0}
