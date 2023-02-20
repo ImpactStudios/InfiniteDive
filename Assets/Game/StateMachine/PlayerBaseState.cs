@@ -177,20 +177,53 @@ public abstract class PlayerBaseState
         ctx.moveData.vCharge = 0f;
     }
 
+    protected void Dash(Vector3 wishDir, float magnitude) {
+
+        ctx.moveData.velocity = wishDir * magnitude;
+
+    }
+
     protected void OnlyInfluence() {
 
         if (ctx.jumpTimer > 0f) return;
 
         Vector3 neutralMove = avatarLookFlat * ctx.moveData.inputDir * ctx.moveConfig.walkSpeed;
 
-        if (oldMomentum.magnitude > ctx.moveConfig.walkSpeed) {
-            oldMomentum = ctx.moveData.velocity;
-            SubtractVelocityAgainst(ref oldMomentum, -oldMomentum.normalized, Mathf.Max(oldMomentum.magnitude / 2f, 5f));
+        bool sliding = ctx.moveData.grounded ? ctx.moveData.velocity.magnitude > ctx.moveConfig.walkSpeed : Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed;
+
+        if (sliding) {
+            oldMomentum = ctx.moveData.grounded ? ctx.moveData.velocity : Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
+            if (ctx.moveData.grounded) SubtractVelocityAgainst(ref oldMomentum, -oldMomentum.normalized, Mathf.Max(oldMomentum.magnitude / 2f, 5f));
             DiveInfluenceVelocity(ref oldMomentum);
             ctx.moveData.velocity = oldMomentum;
         } else {
             oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime * 2f);
+            
+            var yVel = ctx.moveData.velocity.y;
+            ctx.moveData.velocity.y = 0f;
             ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, Vector3.ClampMagnitude(neutralMove + oldMomentum, ctx.moveConfig.walkSpeed), Time.deltaTime * 8f);
+            ctx.moveData.velocity.y = yVel;
+            
+        }
+        
+    }
+
+    private void OnlyInfluenceAir() {
+
+        Vector3 neutralMove = avatarLookFlat * ctx.moveData.inputDir * ctx.moveConfig.walkSpeed / 2f;
+
+        if (Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed) {
+            oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
+            DiveInfluenceVelocityAir();
+        } else {
+            oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime * 2f);
+
+            DiveInfluenceVelocityAir();
+
+            var yVel = ctx.moveData.velocity.y;
+            ctx.moveData.velocity.y = 0f;
+            ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, Vector3.ClampMagnitude(neutralMove + oldMomentum, ctx.moveConfig.walkSpeed), Time.deltaTime);
+            ctx.moveData.velocity.y = yVel;
         }
         
     }
@@ -220,6 +253,20 @@ public abstract class PlayerBaseState
         Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
 
         influencedV += angularAcceleration * (Time.deltaTime);
+        
+    }
+
+    protected void DiveInfluenceVelocity() {
+
+        Vector3 influence = ctx.moveData.flatWishMove * ctx.moveData.velocity.magnitude * Mathf.Pow(3f, .5f);
+        
+        float influenceOrthagonalToVelocity = Vector3.Dot(influence, ctx.velocityRight);
+        Vector3 angularAcceleration = influenceOrthagonalToVelocity * ctx.velocityRight;
+
+        float influenceOppositeToVelocity = Mathf.Clamp(Vector3.Dot(influence, -ctx.velocityForward), 0f, influence.magnitude / 4f);
+        Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
+
+        ctx.moveData.velocity += angularAcceleration * (Time.deltaTime);
         
     }
 

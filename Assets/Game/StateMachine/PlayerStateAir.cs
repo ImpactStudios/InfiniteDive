@@ -46,10 +46,11 @@ public class PlayerStateAir : PlayerBaseState {
         if (ctx.moveData.attacking) {
             SetSubState(factory.Lunge());
         } else if (!ctx.moveData.wishShiftDown) {
-            SetSubState(factory.Fall());
-        } else if (ctx.moveData.wishShiftDown) {
-            SetSubState(factory.Dive());
-        }
+            SetSubState(factory.Neutral());
+        } 
+        // else if (ctx.moveData.wishShiftDown) {
+        //     SetSubState(factory.Dive());
+        // }
     }
 
     public override void CheckSwitchStates()

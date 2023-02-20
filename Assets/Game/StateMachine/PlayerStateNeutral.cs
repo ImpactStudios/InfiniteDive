@@ -19,7 +19,7 @@ public class PlayerStateNeutral : PlayerBaseState {
     {
         OnlyInfluence();
 
-        if (ctx.moveData.wishJumpUp) {
+        if (ctx.moveData.wishJumpUp && (ctx.moveData.grounded || ctx.moveData.detectWall)) {
             BoostJump(ctx.avatarLookForward, Mathf.Max(ctx.moveData.velocity.magnitude, 20f));
             ctx.sphereLines.Stop();
         }
@@ -39,17 +39,17 @@ public class PlayerStateNeutral : PlayerBaseState {
 
     public override void CheckSwitchStates()
     {
-        if (ctx.moveData.wishFireDown) {
-            SwitchState(factory.Lunge());
-        }
+        // if (ctx.moveData.wishFireDown) {
+        //     SwitchState(factory.Lunge());
+        // }
 
-        else if (ctx.moveData.wishShiftDown) {
+        if (ctx.moveData.wishShiftDown) {
             oldMomentum = Vector3.zero;
             SwitchState(_factory.Dash());
         } 
-        else if (!ctx.moveData.grounded) {
-            SwitchState(factory.Fall());
-        }
+        // else if (!ctx.moveData.grounded) {
+        //     SwitchState(factory.Fall());
+        // }
         // else if (ctx.moveData.grappling) {
         //     SwitchState(_factory.Grapple());
         // }

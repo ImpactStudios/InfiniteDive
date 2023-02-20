@@ -394,7 +394,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         // moveData.wishGrappleDown = moveData.wishFire2;
 
-        debug.text = "Aim Assist Blend: " + focusAimBlend;
+        // debug.text = "Aim Assist Blend: " + focusAimBlend;
 
         DecrementTimers();
         CollisionCheck();
@@ -760,11 +760,13 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
             framingCam.m_LookaheadTime = 0f;
 
-            if (moveData.velocity.magnitude < 15f) {
-                framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 3f, Time.deltaTime);
-            } else {
-                framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 9f, Time.deltaTime);
-            }
+            // if (!moveData.wishShiftDown) {
+            //     framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 3f, Time.deltaTime);
+            // } else {
+            //     framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 9f, Time.deltaTime);
+            // }
+
+            framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.velocity, viewForward) / 4f + 2f, 5f), Time.deltaTime * 2f);
             
             framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
             framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);

@@ -12,18 +12,14 @@ public class PlayerStateFall : PlayerBaseState {
     public override void EnterState()
     {
         // oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
-        // Debug.Log("ENTER FALL");
-        ctx.sphereLines.Stop();
+        Debug.Log("ENTER FALL");
+        // ctx.sphereLines.Stop();
         InitializeSubStates();
     }
 
     public override void UpdateState()
     {
-
         OnlyInfluenceAir();
-
-
-        
 
         CheckSwitchStates();
     }
@@ -44,9 +40,9 @@ public class PlayerStateFall : PlayerBaseState {
         //     SwitchState(_factory.Melee());
         // }
 
-        if (ctx.moveData.grounded) {
-            SwitchState(factory.Neutral());
-        }
+        // if (ctx.moveData.grounded) {
+        //     SwitchState(factory.Neutral());
+        // }
         // else if (ctx.moveData.wishShiftDown) {
         //     SwitchState(_factory.Dive());
         // } 

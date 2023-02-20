@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class PlayerStateDash : PlayerBaseState {
 
+    float dashSpeed = 0f;
+    Vector3 dashDir = Vector3.zero;
+
     public PlayerStateDash(PlayerStateMachine currentContext, PlayerStateFactory playerStateFactory) : base (currentContext, playerStateFactory) {
         _isRootState = false;
         name = "dash";
@@ -12,30 +15,37 @@ public class PlayerStateDash : PlayerBaseState {
     public override void EnterState()
     {
         // ctx.sonicBoom.Play();
+        t = 0f;
+        dashSpeed = ctx.moveData.velocity.magnitude + 10f;
+        dashDir = ctx.avatarLookForward;
     }
 
     public override void UpdateState()
     {
 
-        if (ctx.moveData.velocity.magnitude < ctx.moveConfig.runSpeed && !ctx.moveData.wishJumpDown) {
-            Accelerate();
-        }
+        // if (ctx.moveData.velocity.magnitude < ctx.moveConfig.runSpeed && !ctx.moveData.wishJumpDown) {
+        //     Accelerate();
+        // }
 
-        if (!ctx.moveData.wishJumpDown) {
-            DiveInfluenceVelocityMouseFlat(ref ctx.moveData.velocity);
-        }
+        // if (!ctx.moveData.wishJumpDown) {
+        //     DiveInfluenceVelocityMouseFlat(ref ctx.moveData.velocity);
+        // }
 
-        if (ctx.moveData.wishJumpUp) {
+        // if (ctx.moveData.wishJumpUp) {
 
-            Vector3 wishDir = ctx.avatarLookForward;
+        //     Vector3 wishDir = ctx.avatarLookForward;
 
-            if (Vector3.Dot(ctx.avatarLookForward, -ctx.groundNormal) >= 0f) {
-                wishDir = flatForward;
-            }
+        //     if (Vector3.Dot(ctx.avatarLookForward, -ctx.groundNormal) >= 0f) {
+        //         wishDir = flatForward;
+        //     }
 
-            BoostJump(wishDir);
-            ctx.sphereLines.Stop();
-        }
+        //     BoostJump(wishDir);
+        //     ctx.sphereLines.Stop();
+        // }
+
+        Dash(dashDir, dashSpeed);
+
+        t += Time.deltaTime;
 
         CheckSwitchStates();
     }
@@ -52,7 +62,7 @@ public class PlayerStateDash : PlayerBaseState {
 
     public override void CheckSwitchStates()
     {
-        if (!ctx.moveData.wishShiftDown) {
+        if (t > .5f) {
             SwitchState(_factory.Neutral());
         }
     }
