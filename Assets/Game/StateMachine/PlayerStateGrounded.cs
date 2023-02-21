@@ -12,7 +12,7 @@ public class PlayerStateGrounded : PlayerBaseState
 
     public override void EnterState()
     {
-        // Debug.Log("ENTER GROUNDED");
+        Debug.Log("ENTER GROUNDED");
 
         InitializeSubStates();
     }
@@ -65,7 +65,7 @@ public class PlayerStateGrounded : PlayerBaseState
             SetSubState(factory.Dash());
         } else {
             SetSubState(factory.Neutral());
-            _currentSubState.oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
+            // _currentSubState.oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
         } 
     }
 

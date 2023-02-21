@@ -23,26 +23,6 @@ public class PlayerStateDash : PlayerBaseState {
     public override void UpdateState()
     {
 
-        // if (ctx.moveData.velocity.magnitude < ctx.moveConfig.runSpeed && !ctx.moveData.wishJumpDown) {
-        //     Accelerate();
-        // }
-
-        // if (!ctx.moveData.wishJumpDown) {
-        //     DiveInfluenceVelocityMouseFlat(ref ctx.moveData.velocity);
-        // }
-
-        // if (ctx.moveData.wishJumpUp) {
-
-        //     Vector3 wishDir = ctx.avatarLookForward;
-
-        //     if (Vector3.Dot(ctx.avatarLookForward, -ctx.groundNormal) >= 0f) {
-        //         wishDir = flatForward;
-        //     }
-
-        //     BoostJump(wishDir);
-        //     ctx.sphereLines.Stop();
-        // }
-
         Dash(dashDir, dashSpeed);
 
         t += Time.deltaTime;
@@ -67,13 +47,6 @@ public class PlayerStateDash : PlayerBaseState {
         }
     }
 
-    private void Accelerate() {
-
-        float vFactor = 1f;
-
-        if (ctx.moveData.velocity.magnitude < ctx.moveConfig.walkSpeed) vFactor = .1f;
-
-        ctx.moveData.velocity += ctx.moveData.flatWishMove * Time.deltaTime * ctx.moveConfig.walkSpeed / vFactor;
-    }
+    
 
 }

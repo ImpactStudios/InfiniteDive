@@ -87,7 +87,6 @@ public class PlayerStateMelee : PlayerBaseState {
     public override void ExitState()
     {
         ctx.reduceGravityTimer = 0f;
-        ctx.lungeTimer =  .5f;
  
         Debug.Log("EXIT MELEE");
     }

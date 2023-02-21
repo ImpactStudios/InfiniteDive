@@ -51,7 +51,40 @@ public abstract class PlayerBaseState
                 ctx.bezierCurve.DrawCurve();
             }
 
-            
+            if (ctx.moveData.attacking) {
+                // ctx.slashObj.SetActive(true);
+                // ctx.slash.Play();
+
+                Vector3 slashDir = Vector3.ProjectOnPlane(ctx.avatarLookForward, -ctx.moveData.focusDir);
+
+                string[] mask = new string[] { "Ball", "Enemy" };
+
+                // Collider[] hits = Physics.OverlapSphere(ctx.moveData.origin, 5f);
+
+                // if (ctx.currentTarget) {
+                // if (ctx.currentTarget.TryGetComponent(out IHittable target))
+
+                if (ctx.targetLength > 0) {
+
+                    foreach (Collider hit in ctx.moveData.targets) {
+
+                        if (hit) {
+                            if (hit.TryGetComponent(out IHittable successfulHit)) {
+                                Debug.Log("hit");
+
+                                ctx.slashObj.SetActive(true);
+                                ctx.slash.Play();
+                            }
+
+                        }
+                        
+
+                    }
+                }
+
+
+
+            }
 
             if (ctx.releaseTimer > 0f && !ctx.moveData.grappling) {
 
@@ -73,10 +106,6 @@ public abstract class PlayerBaseState
                 ctx.bezierCurve.DrawCurve();
 
             }
-
-            if (ctx.moveData.wishJumpUp && !ctx.moveData.grounded && !ctx.moveData.grappling && !ctx.moveData.detectWall) {
-                BoostJump(ctx.avatarLookForward, Mathf.Max(ctx.moveData.velocity.magnitude, 30f));
-            } 
 
         }
 
@@ -133,12 +162,12 @@ public abstract class PlayerBaseState
 
     protected void BrakeCharge(Vector3 wishDir) {
         float velocityFactor = Mathf.Max(ctx.moveData.velocity.magnitude / (ctx.moveConfig.runSpeed / 2f), 1f);
-        // ctx.moveData.vCharge = Mathf.Min(ctx.moveData.vCharge + Time.deltaTime * velocityFactor, ctx.moveConfig.maxCharge);
         ctx.moveData.vCharge = Mathf.Min(ctx.moveData.vCharge + Time.deltaTime, ctx.moveConfig.maxCharge);
 
-        Vector3 launchVel = ImpulseCancelVelocityAgainst(wishDir, ctx.moveData.velocity);
-        float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
-        launchVel = wishDir * forceJump + Vector3.Dot(launchVel.normalized, wishDir) * launchVel.magnitude * wishDir;
+        // Vector3 launchVel = ImpulseCancelVelocityAgainst(wishDir, ctx.moveData.velocity);
+        // float forceJump = Mathf.Max(ctx.moveData.vCharge * 20f, ctx.moveConfig.jumpForce + 10f);
+        // launchVel = wishDir * forceJump + Vector3.Dot(launchVel.normalized, wishDir) * launchVel.magnitude * wishDir;
+        
         // ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, launchVel);
         // ctx.bezierCurve.DrawProjection();
     }
@@ -188,41 +217,21 @@ public abstract class PlayerBaseState
         if (ctx.jumpTimer > 0f) return;
 
         Vector3 neutralMove = avatarLookFlat * ctx.moveData.inputDir * ctx.moveConfig.walkSpeed;
+        float power = ctx.moveData.grounded ? Mathf.Pow(3f, .5f) : Mathf.Pow(3f, .5f) / 2f;
 
-        bool sliding = ctx.moveData.grounded ? ctx.moveData.velocity.magnitude > ctx.moveConfig.walkSpeed : Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed;
+        if (!ctx.moveData.grounded) neutralMove = avatarLookFlat * ctx.moveData.inputDir * ctx.moveConfig.walkSpeed / 2f;
 
-        if (sliding) {
-            oldMomentum = ctx.moveData.grounded ? ctx.moveData.velocity : Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
-            if (ctx.moveData.grounded) SubtractVelocityAgainst(ref oldMomentum, -oldMomentum.normalized, Mathf.Max(oldMomentum.magnitude / 2f, 5f));
-            DiveInfluenceVelocity(ref oldMomentum);
-            ctx.moveData.velocity = oldMomentum;
+        oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime);
+
+        if (Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed) {
+            if (ctx.moveData.grounded) SubtractVelocityAgainst(ctx.moveData.velocity.normalized, Mathf.Max(oldMomentum.magnitude / 2f, 5f));
+            DiveInfluenceVelocity(Mathf.Pow(3f, .5f));
+            oldMomentum = ctx.moveData.velocity;
         } else {
-            oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime * 2f);
             
             var yVel = ctx.moveData.velocity.y;
             ctx.moveData.velocity.y = 0f;
             ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, Vector3.ClampMagnitude(neutralMove + oldMomentum, ctx.moveConfig.walkSpeed), Time.deltaTime * 8f);
-            ctx.moveData.velocity.y = yVel;
-            
-        }
-        
-    }
-
-    private void OnlyInfluenceAir() {
-
-        Vector3 neutralMove = avatarLookFlat * ctx.moveData.inputDir * ctx.moveConfig.walkSpeed / 2f;
-
-        if (Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed) {
-            oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
-            DiveInfluenceVelocityAir();
-        } else {
-            oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime * 2f);
-
-            DiveInfluenceVelocityAir();
-
-            var yVel = ctx.moveData.velocity.y;
-            ctx.moveData.velocity.y = 0f;
-            ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, Vector3.ClampMagnitude(neutralMove + oldMomentum, ctx.moveConfig.walkSpeed), Time.deltaTime);
             ctx.moveData.velocity.y = yVel;
         }
         
@@ -242,23 +251,9 @@ public abstract class PlayerBaseState
         
     }
 
-    protected void DiveInfluenceVelocity(ref Vector3 influencedV) {
+    protected void DiveInfluenceVelocity(float power) {
 
-        Vector3 influence = ctx.moveData.flatWishMove * ctx.moveData.velocity.magnitude * Mathf.Pow(3f, .5f);
-        
-        float influenceOrthagonalToVelocity = Vector3.Dot(influence, ctx.velocityRight);
-        Vector3 angularAcceleration = influenceOrthagonalToVelocity * ctx.velocityRight;
-
-        float influenceOppositeToVelocity = Mathf.Clamp(Vector3.Dot(influence, -ctx.velocityForward), 0f, influence.magnitude / 4f);
-        Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
-
-        influencedV += angularAcceleration * (Time.deltaTime);
-        
-    }
-
-    protected void DiveInfluenceVelocity() {
-
-        Vector3 influence = ctx.moveData.flatWishMove * ctx.moveData.velocity.magnitude * Mathf.Pow(3f, .5f);
+        Vector3 influence = ctx.moveData.flatWishMove * ctx.moveData.velocity.magnitude * power;
         
         float influenceOrthagonalToVelocity = Vector3.Dot(influence, ctx.velocityRight);
         Vector3 angularAcceleration = influenceOrthagonalToVelocity * ctx.velocityRight;
@@ -291,28 +286,10 @@ public abstract class PlayerBaseState
         
     }
 
-    protected void DiveInfluenceVelocityMouseFlat(ref Vector3 influencedV) {
-
-        Vector3 influence = ctx.moveData.flatWishMove * ctx.moveData.velocity.magnitude * Mathf.Pow(3f, .5f);
-        float influenceOrthagonalToVelocity = Vector3.Dot(influence, ctx.velocityRight);
-        Vector3 angularAcceleration = influenceOrthagonalToVelocity * ctx.velocityRight;
-
-        float influenceOppositeToVelocity = Mathf.Clamp(Vector3.Dot(influence, -ctx.velocityForward), 0f, influence.magnitude / 8f);
-        Vector3 deceleration = influenceOppositeToVelocity * -ctx.velocityForward;
-
-        influencedV += angularAcceleration * (Time.deltaTime) + deceleration * (Time.deltaTime);
-        
-        // Vector3 keyInfluence = ctx.velocityRotation * ctx.moveData.influenceVelocity;
-        // keyInfluence = Vector3.Dot(keyInfluence, ctx.velocityRight) * ctx.velocityRight;
-        
-        // influencedV += keyInfluence * Time.deltaTime * ctx.moveData.velocity.magnitude / 4f;
-        
-    }
-
-    public void ImpulseCancelVelocityAgainst(Vector3 wishDir, float k = 1f) {
+    public void ImpulseCancelVelocityAgainst(Vector3 wishDir) {
 
         if (Vector3.Dot(ctx.moveData.velocity, -wishDir.normalized) > 0f) {
-            ctx.moveData.velocity += Vector3.Dot(ctx.moveData.velocity, -wishDir.normalized) * wishDir * k;
+            ctx.moveData.velocity += Vector3.Dot(ctx.moveData.velocity, -wishDir.normalized) * wishDir;
         }
 
 
@@ -348,7 +325,16 @@ public abstract class PlayerBaseState
         
     }
 
-    // public void OnlyAngularVelocity(float response, float pull) {
+    private void Accelerate() {
+
+        float vFactor = 1f;
+
+        if (ctx.moveData.velocity.magnitude < ctx.moveConfig.walkSpeed) vFactor = .1f;
+
+        ctx.moveData.velocity += ctx.moveData.flatWishMove * Time.deltaTime * ctx.moveConfig.walkSpeed / vFactor;
+    }
+
+    // public void OnlyAngularVelocityControl(float response, float pull) {
 
     //     float speed = ctx.moveData.velocity.magnitude;
     //     Vector3 result = Vector3.zero;
@@ -374,23 +360,6 @@ public abstract class PlayerBaseState
 
     // }
 
-    // public void ShiftAngularVelocity(Vector3 wishDir, float response) {
-
-    //     float speed = ctx.moveData.velocity.magnitude;
-    //     Vector3 velocityRadial = Vector3.Dot(ctx.moveData.velocity, wishDir) * wishDir;
-
-    //     // if (Vector3.Dot(ctx.moveData.velocity, ctx.moveData.targetDir) < 0f) {
-    //     //     velocityRadial = Vector3.Dot(ctx.moveData.velocity, wishDir) * wishDir;
-    //     // }
-
-    //     Vector3 velocityOrthagonal = (ctx.moveData.velocity - velocityRadial).normalized * speed;
-
-    //     ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, velocityOrthagonal, Time.deltaTime * response);
-    //     // ctx.moveData.velocity = velocityOrthagonal;
-
-    // }
-
-
     protected void SubtractVelocityAgainst(Vector3 wishDir, float amount) {
 
         ctx.moveData.velocity += Vector3.Dot(ctx.moveData.velocity.normalized, -wishDir.normalized) * wishDir.normalized * amount * Time.deltaTime; 
@@ -399,10 +368,6 @@ public abstract class PlayerBaseState
 
     protected void SubtractVelocityAgainst(ref Vector3 originalV, Vector3 wishDir, float amount) {
         originalV += Vector3.Dot(ctx.moveData.velocity.normalized, -wishDir.normalized) * wishDir.normalized * amount * Time.deltaTime; 
-    }
-
-    protected void AddVelocityTo(Vector3 wishDir, float amount) {
-        ctx.moveData.velocity += wishDir.normalized * amount * Time.deltaTime; 
     }
 
 }

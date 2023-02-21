@@ -11,7 +11,7 @@ public class PlayerStateAir : PlayerBaseState {
 
     public override void EnterState()
     {
-        // Debug.Log("ENTER AIR");
+        Debug.Log("ENTER AIR");
         InitializeSubStates();
     }
 
@@ -27,7 +27,7 @@ public class PlayerStateAir : PlayerBaseState {
 
         AirMovement();
 
-        if (ctx.moveData.velocity.magnitude > 40f) {
+        if (ctx.moveData.velocity.magnitude > ctx.moveConfig.runSpeed) {
             SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude / 2f);
         }
 
@@ -48,9 +48,6 @@ public class PlayerStateAir : PlayerBaseState {
         } else if (!ctx.moveData.wishShiftDown) {
             SetSubState(factory.Neutral());
         } 
-        // else if (ctx.moveData.wishShiftDown) {
-        //     SetSubState(factory.Dive());
-        // }
     }
 
     public override void CheckSwitchStates()

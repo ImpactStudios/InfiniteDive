@@ -91,6 +91,59 @@ public class BezierCurve : MonoBehaviour
 
     Vector3 GetPos( int i ) => controlPoints[i].transform.position;
 
+    OrientedPoint GetCirclePoint( Vector3 start, Vector3 end, Vector3 centerPivot, float t) {
+
+        Vector3 pos = ctx.CenteredSlerp(start, end, centerPivot, t);
+
+
+        Vector3 originRelative = ctx.moveData.origin - centerPivot;
+        Vector3 endRelative = end - centerPivot;
+
+        Vector3 lookingIn = (centerPivot - ctx.moveData.origin).normalized;
+        Vector3 discUp = Vector3.Cross(originRelative, endRelative);
+
+        Debug.Log(discUp);
+
+        Quaternion centerRot = Quaternion.LookRotation(centerPivot - start, discUp);
+
+        Vector3 dir = centerRot * Vector3.right;
+
+        return new OrientedPoint(pos, dir);
+
+    }
+
+    public void InterpolateAcrossCircleC1(Vector3 start, Vector3 end, Vector3 centerPivot, float t) { // TODO:
+
+        OrientedPoint op = GetCirclePoint(start, end, centerPivot, t);
+
+        float length = (end - start).magnitude * Mathf.PI / 2f;
+        estimatedTime =  length / Mathf.Max(ctx.moveConfig.runSpeed, ctx.moveData.velocity.magnitude);
+        estimatedVelocity = length / estimatedTime;
+
+        // ctx.moveData.velocity = (op.rot * Vector3.forward) * Mathf.Lerp(initialVelocityMag, estimatedVelocity, t / estimatedTime);
+        // ctx.moveData.velocity = Vector3.Lerp(ctx.moveData.velocity, (op.rot * Vector3.forward) * estimatedVelocity, Time.deltaTime * 50f);
+        ctx.moveData.velocity = op.rot * Vector3.forward * estimatedVelocity;
+        // ctx.moveData.origin = Vector3.Slerp(ctx.moveData.origin, op.pos, Time.deltaTime * 5f);
+        ctx.moveData.origin = op.pos;
+    }
+
+    public void DrawCircle(Vector3 centerPivot) {
+        
+        lr.positionCount = 9;
+
+        lr.materials[0].mainTextureOffset += new Vector2(-Time.deltaTime, 0f);
+        
+        lr.SetPosition(0, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.1f).pos);
+        lr.SetPosition(1, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.2f).pos);
+        lr.SetPosition(2, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.3f).pos);
+        lr.SetPosition(3, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.4f).pos);
+        lr.SetPosition(4, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.5f).pos);
+        lr.SetPosition(5, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.6f).pos);
+        lr.SetPosition(6, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.7f).pos);
+        lr.SetPosition(7, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.8f).pos);
+        lr.SetPosition(8, GetCirclePoint(ctx.moveData.origin, ctx.moveData.focusPoint, centerPivot,.9f).pos);
+    }
+
     public void DrawCurve() {
 
         // lr.positionCount = 9;
@@ -827,6 +880,8 @@ public class BezierCurve : MonoBehaviour
 
         return new OrientedPoint(Vector3.Lerp(d, e, t), (e-d).normalized);
     }
+
+    
 
     // public void SpiralCurve(float centerForce, Vector3 gTarget, Vector3 initialV, Vector3 targetV) {
 

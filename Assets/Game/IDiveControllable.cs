@@ -25,6 +25,7 @@ public interface IDiveControllable {
     Vector3 velocityForward { get; }
 
     Quaternion FlatLookRotation(Vector3 forward, Vector3 normal);
+    Vector3 CenteredSlerp(Vector3 start, Vector3 end, Vector3 centerPivot, float t);
 
     void StopGrapple();
 

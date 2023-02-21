@@ -12,6 +12,7 @@ public class PlayerStateFactory {
         grapple,
         melee,
         lunge,
+        lungecooldown,
         noop
     }
 
@@ -36,6 +37,7 @@ public class PlayerStateFactory {
         
         _states[State.melee] = new PlayerStateMelee(_context, this);
         _states[State.lunge] = new PlayerStateLunge(_context, this);
+        _states[State.lungecooldown] = new PlayerStateLungeCooldown(_context, this);
         _states[State.noop] = new PlayerStateNoop(_context, this);
 
     }
@@ -74,6 +76,10 @@ public class PlayerStateFactory {
 
     public PlayerBaseState Lunge() {
         return _states[State.lunge];
+    }
+
+    public PlayerBaseState LungeCooldown() {
+        return _states[State.lungecooldown];
     }
 
     public PlayerBaseState Noop() {
