@@ -764,7 +764,7 @@ Material:
     - _BaseColor2: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor3: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColorMap0_MipInfo: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 1, g: 0.36862743, b: 0, a: 0.14901961}
+    - _Color: {r: 1, g: 0.36862746, b: 0, a: 0.14901961}
     - _CustomLightDirection: {r: 0, g: 0, b: 10, a: 0}
     - _DiffusionProfileAsset0: {r: 0, g: 0, b: 0, a: 0}
     - _DiffusionProfileAsset1: {r: 0, g: 0, b: 0, a: 0}

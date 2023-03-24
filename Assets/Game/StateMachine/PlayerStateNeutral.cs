@@ -17,12 +17,15 @@ public class PlayerStateNeutral : PlayerBaseState {
 
     public override void UpdateState()
     {
-        OnlyInfluence();
 
         if (ctx.moveData.wishJumpUp && ctx.moveData.grounded) {
-            BoostJump(ctx.avatarLookForward, Mathf.Max(ctx.moveData.velocity.magnitude, 20f));
+            // CancelVelocityAgainst(ctx.avatarLookForward, .5f);
+            Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
+            BoostJump(wishDir, Mathf.Max(ctx.moveData.velocity.magnitude, 20f));
             ctx.sphereLines.Stop();
         }
+
+        OnlyInfluence();
 
         CheckSwitchStates();
     }
@@ -39,9 +42,9 @@ public class PlayerStateNeutral : PlayerBaseState {
 
     public override void CheckSwitchStates()
     {
-        if (ctx.moveData.wishFireDown) {
-            SwitchState(factory.Lunge());
-        }
+        // if (ctx.moveData.wishFireDown) {
+        //     SwitchState(factory.Lunge());
+        // }
 
         // if (ctx.moveData.wishShiftDown) {
         //     // oldMomentum = Vector3.zero;

@@ -33,10 +33,10 @@ public class PlayerStateGrapple : PlayerBaseState {
     {
         // Debug.Log("EXIT GRAPPLE");
         // ctx.jumpTimer = 0f;
-        ctx.reduceGravityTimer = 0f;
+        ctx.ignoreGravityTimer = 1f;
     }
 
-    public override void InitializeSubStates()
+    public override void InitializeSubStates() // 762416 36987
     {
         SetSubState(factory.Noop());
     }
@@ -72,20 +72,34 @@ public class PlayerStateGrapple : PlayerBaseState {
 
     private void GrappleMove() {
 
+
+            if (!ctx.moveData.wishJumpDown) OnlyAngularVelocityControl(2f);
+            
             CancelVelocityAgainst(ctx.moveData.grappleDir, 7.5f);
             
-            ctx.moveData.velocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * .5f);
+            // ctx.moveData.velocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * .5f);
 
-            if (ctx.moveData.wishJumpUp) {
-                BoostJump((ctx.avatarLookForward).normalized, Mathf.Max(ctx.moveData.velocity.magnitude, 30f));
-                ctx.moveData.grappling = false;
-            } 
+            // if (ctx.moveData.wishJumpUp) {
+            //    Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
+            //     BoostJump((ctx.avatarLookForward).normalized, Mathf.Max(ctx.moveData.velocity.magnitude, 30f));
+            //     ctx.moveData.grappling = false;
+            // }
+
+            // Quaternion grappleRot = Quaternion.LookRotation(ctx.moveData.grappleDir);
+
+            // Vector3 avatarInputDir = (ctx.avatarLookRotation * ctx.moveData.inputDir);
+
+            // Vector3 grappleInputDir = avatarInputDir * Vector3.Dot(avatarInputDir, ctx.moveData.grappleDir);
+
+            // ctx.moveData.velocity += grappleInputDir * ctx.moveConfig.walkSpeed * Time.deltaTime;
             
             if (ctx.moveData.wishShiftDown) {
                 
                 // ctx.moveData.velocity = Vector3.Slerp(ctx.moveData.velocity, ctx.moveData.grappleDir * (ctx.moveData.distanceFromGrapple), Time.deltaTime * (1f + t));
                 
-                ctx.moveData.velocity += ctx.moveData.grappleDir * (initialDistance/2f) * Time.deltaTime * (Mathf.Sqrt(3f)) + ctx.avatarLookForward * (initialDistance/2f) * Time.deltaTime;
+                float power = initialDistance/2f;
+                
+                ctx.moveData.velocity += (ctx.moveData.grappleDir + ctx.avatarLookForward / 8f).normalized * power * Time.deltaTime * (Mathf.Sqrt(3f));
                 // ctx.moveData.velocity = Vector3.ClampMagnitude(ctx.moveData.velocity, initialDistance * 2f);
 
                 ctx.moveConfig.grappleColor = Color.Lerp(ctx.moveConfig.grappleColor, ctx.moveConfig.accelColor, Time.deltaTime * 2f);
@@ -96,10 +110,10 @@ public class PlayerStateGrapple : PlayerBaseState {
             }
             else {
                 t = 0f;
-                initialDistance = Mathf.Min(ctx.moveData.distanceFromGrapple, 30f);
+                // initialDistance = Mathf.Max(initialDistance/2f, 30f);
             }
 
-            if (ctx.moveData.wishCrouchUp || ctx.moveData.distanceFromGrapple < ctx.moveConfig.minDistance / 2f) {
+            if (Vector3.Dot(ctx.moveData.focusDir, ctx.avatarLookForward) < 0f || ctx.moveData.wishCrouchUp || ctx.moveData.distanceFromGrapple < ctx.moveConfig.minDistance) {
                 ctx.moveData.grappling = false;
                 releaseVelocity = ctx.moveData.velocity;
                 ctx.releaseTimer = 5f;
@@ -108,6 +122,28 @@ public class PlayerStateGrapple : PlayerBaseState {
                 releasedPoints[1] = ctx._grappleArc.GetVector3("Pos1");
                 releasedPoints[2] = ctx._grappleArc.GetVector3("Pos2");
                 releasedPoints[3] = ctx._grappleArc.GetVector3("Pos3");
+            }
+
+            if (ctx.moveData.wishJumpUp) {
+                // CancelVelocityAgainst(ctx.avatarLookForward, .5f);
+                Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
+                BoostJump(wishDir, Mathf.Max(30f, ctx.moveData.distanceFromGrapple * 2f));
+                ctx.sphereLines.Stop();
+                ctx.moveData.grappling = false;
+                ctx.moveData.attacking = true;
+                ctx.lungeCooldownTimer = 1f;
+            }
+
+            if (ctx.moveData.wishJumpDown) {
+                // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 1.5f, Time.deltaTime * 4f);
+                ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
+                ctx.sphereLines.Play();
+
+                ctx.focusAimBlend = Mathf.Lerp(ctx.focusAimBlend, .8f, Time.deltaTime * 8f);
+                
+                // SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude * 2f);
+
+                BrakeCharge(ctx.avatarLookForward);
             }
 
     }

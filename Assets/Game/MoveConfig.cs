@@ -36,6 +36,8 @@ public class MoveConfig: MonoBehaviour {
     public float verticalSensitivity = 1f;
     public float minYRotation = -75f;
     public float maxYRotation = 75f;
+    public float minXRotation = -180f;
+    public float maxXRotation = 180f;
     
 }
 

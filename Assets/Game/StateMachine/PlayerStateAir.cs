@@ -12,13 +12,14 @@ public class PlayerStateAir : PlayerBaseState {
     public override void EnterState()
     {
         Debug.Log("ENTER AIR");
+        // oldMomentum = Vector3.zero;
         InitializeSubStates();
     }
 
     public override void UpdateState()
     {
 
-        if (ctx.ignoreGravityTimer > 0f) { } 
+        if (ctx.ignoreGravityTimer > 0f || ctx.moveData.attacking) { } 
         else if (ctx.reduceGravityTimer > 0f) {
             ctx.moveData.velocity.y -= (ctx.moveConfig.gravity * Time.deltaTime * (1f - ctx.reduceGravityTimer));
         } else if (!ctx.moveData.grappling) {
@@ -27,9 +28,9 @@ public class PlayerStateAir : PlayerBaseState {
 
         AirMovement();
 
-        if (ctx.moveData.velocity.magnitude > ctx.moveConfig.runSpeed) {
-            SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude / 2f);
-        }
+        // if (ctx.moveData.velocity.magnitude > ctx.moveConfig.runSpeed) {
+        //     SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude / 2f);
+        // }
 
         // Debug.Log(ctx.moveData.velocity.magnitude);
         // ctx.moveData.velocity = Vector3.ClampMagnitude(ctx.moveData.velocity, 30f);
@@ -43,11 +44,8 @@ public class PlayerStateAir : PlayerBaseState {
 
     public override void InitializeSubStates()
     {
-        if (ctx.moveData.attacking) {
-            SetSubState(factory.Lunge());
-        } else if (!ctx.moveData.wishShiftDown) {
-            SetSubState(factory.Neutral());
-        } 
+        oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 1f, 1f));
+        SetSubState(factory.Neutral());
     }
 
     public override void CheckSwitchStates()
@@ -117,7 +115,7 @@ public class PlayerStateAir : PlayerBaseState {
                 ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
                 ctx.sphereLines.Play();
                 
-                SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude / 2f);
+                // SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude / 4f);
 
                 BrakeCharge(ctx.avatarLookForward);
             }
@@ -131,8 +129,6 @@ public class PlayerStateAir : PlayerBaseState {
 
             // ctx.bezierCurve.PredictGravityArc(ctx.moveData.origin, ctx.moveConfig.gravity, ctx.moveData.velocity);
             // ctx.bezierCurve.DrawProjection();
-
-
 
             // if (ctx.moveData.wishJumpDown && !ctx.doubleJump) {
             //     SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude / 2f);

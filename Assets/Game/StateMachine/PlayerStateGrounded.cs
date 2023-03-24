@@ -22,12 +22,12 @@ public class PlayerStateGrounded : PlayerBaseState
 
         // Debug.Log(ctx.moveData.velocity);
 
-        if (ctx.moveData.wishJumpDown) {
+        if (ctx.moveData.wishJumpDown && ctx.energySlider.value > .25f) {
             // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 3f, Time.deltaTime * 4f);
             ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
             ctx.sphereLines.Play();
             
-            SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude * 2f);
+            // SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude * 2f);
 
             BrakeCharge(ctx.avatarLookForward);
         }
@@ -59,14 +59,17 @@ public class PlayerStateGrounded : PlayerBaseState
 
     public override void InitializeSubStates()
     {
-        if (ctx.moveData.attacking) {
-            SetSubState(factory.Lunge());
-        } else if (ctx.moveData.wishShiftDown) {
-            SetSubState(factory.Dash());
-        } else {
+        // if (ctx.moveData.attacking) {
+        //     SetSubState(factory.Lunge());
+        // } else if (ctx.moveData.wishShiftDown) {
+        //     // SetSubState(factory.Dash());
+        // } else {
+            oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 1f, 1f));
             SetSubState(factory.Neutral());
-            // _currentSubState.oldMomentum = Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f));
-        } 
+        // }
+
+        
+
     }
 
     public override void CheckSwitchStates()

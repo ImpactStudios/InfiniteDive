@@ -19,6 +19,7 @@ public class PlayerStateFall : PlayerBaseState {
 
     public override void UpdateState()
     {
+        // OnlyInfluence();
 
         CheckSwitchStates();
     }

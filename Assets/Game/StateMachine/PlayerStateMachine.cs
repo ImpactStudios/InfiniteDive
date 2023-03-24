@@ -4,27 +4,16 @@ using System.Collections;
 using System;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using DynamicMeshCutter;
 using UnityEngine.VFX;
 using Cinemachine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.Events;
-using MagicaCloth;
 using QFSW.QC;
 
-// BanannaRepublic
-// user
-// wTTg3nspLoYM
-// qGWQtm1FcHUB
-
-public enum ColliderType {
-    Capsule,
-    Box,
-    Sphere
-}
-
 public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
+
+    public GameObject cloak;
 
     [SerializeField] GameObject grappleGun;
     [SerializeField] GameObject smokeObj;
@@ -33,7 +22,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     [SerializeField] GameObject airHikeObj;
     [SerializeField] GameObject sphereLinesObj;
     [SerializeField] public GameObject ballObj;
-    [SerializeField] MagicaAreaWind wind;
     public Volume globalVolume;
     [HideInInspector] public VisualEffect grappleArc;
     [HideInInspector] public VisualEffect slash;
@@ -65,16 +53,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     public Camera _cam;
     GameObject _groundObject;
-
-    ///// Fields /////
-
     public Transform avatarLookTransform;
-
-
-
-
-    
-    
     private CapsuleCollider _playerCollider;
     private SphereCollider _sphereCollider;
     private Vector3 _frontSide;
@@ -88,8 +67,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     public MoveData _moveData;
     public MoveConfig _moveConfig;
-
-    ///// Properties /////
 
     public PlayerBaseState currentState { get {return _currentState; } set { _currentState = value; } }
     public MoveConfig moveConfig { get { return _moveConfig; } }
@@ -149,21 +126,16 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     Vector3 tmpLookAt = Vector3.zero;
     Quaternion tmpLookAtRot;
 
-    // KIK: Marsh_Mellow9
-
-
     public Transform lookAtThis;
     public Transform focusOnThis;
 
     [HideInInspector] public GameObject slashObj;
     [HideInInspector] public GameObject trajectory;
     // public GameObject cloak;
-    // private Material cloakMat;
+    private Material cloakMat;
     private Material circleMat;
     private Material lineMat;
     private Material dotMat;
-
-    
 
     [HideInInspector] public int targetLength = 0;
     [HideInInspector] public Collider currentTarget = null;
@@ -172,16 +144,18 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     [HideInInspector] public float focusAimBlend;
     [HideInInspector] public float elasticTime = .5f;
     [HideInInspector] public float centripetalForce = 2f;
-    
 
-    
-    
+    public GameObject energyObj;
+    public Slider energySlider;
 
     private void Awake() {
 
         playerCollider = transform.GetComponent<CapsuleCollider>();
         animator = transform.GetChild(0).GetComponent<Animator>();
         slashObj = transform.GetChild(1).transform.GetChild(1).gameObject;
+
+        energySlider = energyObj.GetComponent<Slider>();
+        energySlider.value = .5f;
 
 
 
@@ -190,6 +164,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         circleMat = Resources.Load("Materials/blueCircle") as Material;
         lineMat = Resources.Load("Materials/redLine") as Material;
         dotMat = Resources.Load("Materials/greenDot") as Material;
+        cloakMat = Resources.Load("Materials/CloakFlow") as Material;
 
         moveConfig.grappleColor = moveConfig.normalColor;
 
@@ -369,17 +344,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             
         };
 
-        // PlayerControls.Player.Look2.performed += context => {
-        //     moveData.mousePosition = context.ReadValue<Vector2>();
-        // };
-
-        // PlayerControls.Player.Dive.performed += context => {
-        //     if (context.interaction is HoldInteraction) {
-        //         moveType = MoveType.Charge;
-        //     }
-
-        // };
-
         currentState = new PlayerStateAir(this, new PlayerStateFactory(this));
         currentState.InitializeSubStates();
         bezierCurve = new BezierCurve(this);
@@ -433,6 +397,8 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             Application.Quit();
         }
 
+        focusAimBlend = Mathf.Lerp(focusAimBlend, .5f, Time.deltaTime * 2f);
+
     }
 
     private void FindTargets() {
@@ -456,11 +422,11 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void DoVelocityAnimations() {
 
-        // Vector3.ProjectOnPlane(moveData.velocity, groundNormal);
-
         var yVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.velocity, groundNormal), bodyForward);
 
         var xVel = Vector3.Dot(Vector3.ProjectOnPlane(moveData.velocity, groundNormal), bodyRight);
+
+        cloakMat.SetVector("_WindDirection2", -moveData.velocity / 12f);
 
         var isDiveInput = new Vector2(moveData.horizontalAxis, moveData.verticalAxis) != Vector2.zero;
 
@@ -490,70 +456,19 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             // yVel = Mathf.Lerp(yVel, -yVel, .3f);
         }
 
-        // if (!moveData.wishFire2) {
-            animator.SetFloat("xVel", xVel);
-            animator.SetFloat("yVel", yVel);
+        animator.SetFloat("xVel", xVel);
+        animator.SetFloat("yVel", yVel);
 
-
-            animator.SetBool("ChargePress", moveData.wishCrouchDown);
-            animator.SetBool("onGround", moveData.grounded);
-            
-            if (xVel >= 2f) {
-                // cloakMat.SetFloat("_WaveFrequency", -.25f);
-            } else {
-                // cloakMat.SetFloat("_WaveFrequency", .25f);
-            }
-
-            // Mathf.Lerp(-.1f, .3f, moveData.velocity.magnitude/moveConfig.runSpeed)
-
-            // cloakMat.SetVector("_WindDirection2", new Vector3(-xVel/moveConfig.runSpeed, -moveData.velocity.y/moveConfig.runSpeed + .25f, -yVel/moveConfig.runSpeed));
-            // cloakMat.SetFloat("_Amplitude", .15f);
-            // cloakMat.SetFloat("_AmplitudeFloor", Mathf.Lerp(.15f, .35f, moveData.velocity.magnitude/moveConfig.runSpeed));
-        // }
-
+        animator.SetBool("ChargePress", moveData.wishCrouchDown);
+        animator.SetBool("onGround", moveData.grounded);
+        
     }
 
     private void CheckGrapplePress() {
 
-        float distance = 150f * grappleShootTimer * 2f;
-
         if (moveData.wishFire2Press && !moveData.grappling) {
             ConnectGrapple(moveData.focusPoint);
-
-            // moveData.focusDir = -differenceInPixels.normalized;
         }
-
-        // if (moveData.wishFire2Down && !moveData.grappling) {
-
-        //     grappleShootTimer = Mathf.Min((Time.deltaTime) + grappleShootTimer, .5f);
-        //     circleMat.SetFloat("_size", .5f - grappleShootTimer + .001f);
-        //     circleMat.SetFloat("_alpha", grappleShootTimer*2f);
-
-        //     Ray ray = new Ray(avatarLookTransform.position + avatarLookForward * moveConfig.castRadius * 2f, avatarLookForward);
-        //     RaycastHit hit;
-
-        //     if (Physics.SphereCast(ray, moveConfig.castRadius * 2f, out hit, distance, LayerMask.GetMask (new string[] { "Focus", "Ground" }))) {
-        //         circleMat.SetColor("_color", moveConfig.grappleColor);
-        //     } else {
-        //         circleMat.SetColor("_color", Color.grey);
-        //     }
-
-        // } else {
-
-        //     if (grappleShootTimer > 0f) {
-                // ShootGrapple(distance);
-        //     }
-
-
-        //     grappleShootTimer = 0f;
-        //     circleMat.SetFloat("_alpha", 0f);
-        // }
-
-        // if (moveData.grappling) {
-        //     if (moveData.wishCrouchDown || moveData.distanceFromPoint > 150f || moveData.distanceFromPoint < moveConfig.minDistance) {
-        //         StopGrapple();
-        //     }
-        // }
 
 
     }
@@ -602,8 +517,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
     }
 
     public Vector3 CenteredSlerp(Vector3 start, Vector3 end, Vector3 centerPivot, float t) {
-        // Vector3 centerPivot = (start + end) * .5f;
-
 
         Vector3 startRelativeCenter = start - centerPivot;
         Vector3 endRelativeCenter = end - centerPivot;
@@ -613,7 +526,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void TransformRotation() {
 
-
         string[] mask = new string[] { "Ground", "Ball", "Enemy" };
 
         Vector3 castPos = avatarLookTransform.position;
@@ -621,7 +533,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         
         RaycastHit hit;
 
-        if (!moveData.attacking && !moveData.wishFireDown) { // aim assist stuff
+        if (!moveData.attacking && !moveData.grappling) { // aim assist stuff
 
             for (float i = 1f; i <= moveConfig.maxDistance; i++) {
 
@@ -643,8 +555,6 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
                     moveData.distanceFromFocus = (moveData.focusPoint - moveData.origin).magnitude;
                     moveData.focusNormal = hit.normal;
                     // aimAssistOn = true;
-
-                    
 
                     if (LayerMask.LayerToName(hit.collider.gameObject.layer) == "Enemy") {
                         moveData.targetPoint = hit.collider.transform.position;
@@ -693,10 +603,27 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         xMovement = moveData.mouseDelta.x * moveConfig.horizontalSensitivity * moveConfig.sensitivityMultiplier * moveData.xAimDamp;
 		yMovement = -moveData.mouseDelta.y * moveConfig.verticalSensitivity  * moveConfig.sensitivityMultiplier * moveData.yAimDamp;
 
-        viewTransformLookAt.x = Mathf.Clamp(viewTransformLookAt.x + yMovement, moveConfig.minYRotation, moveConfig.maxYRotation) % 360f;
-        viewTransformLookAt.y = viewTransformLookAt.y + xMovement % 360f;
+        if (moveData.grappling) {
+            moveData.focusDir = (moveData.focusPoint - moveData.origin).normalized;
+            
+            viewTransformLookAt.y = (viewTransformLookAt.y + xMovement);
+        }
+        // else if (moveData.wishJumpDown) {
+        //     moveData.focusDir = (moveData.focusPoint - moveData.origin).normalized;
+        //     float angleY = Mathf.Atan2(moveData.focusDir.x, moveData.focusDir.z) * Mathf.Rad2Deg;
+        //     float angleX = Mathf.Atan2(moveData.focusDir.y, moveData.focusDir.z) * Mathf.Rad2Deg;
+        //     viewTransformLookAt.y = Mathf.Clamp(viewTransformLookAt.y + xMovement, angleY - 80f, angleY + 80f);
+
+            
+        // } 
+        else {
+            
+            viewTransformLookAt.y = (viewTransformLookAt.y + xMovement);
+        }
+
+        viewTransformLookAt.x = Mathf.Clamp(viewTransformLookAt.x + yMovement, moveConfig.minYRotation, moveConfig.maxYRotation);
         
-        avatarLookTransform.localPosition = groundNormal; // TODO: reverse this
+        avatarLookTransform.localPosition = groundNormal; // TODO: reverse this decision
 
         viewRotation = // this is what controls the cinemachine camera, in case someone other than me is trying to figure it out
         Quaternion.AngleAxis(viewTransformLookAt.y, Vector3.up) *
@@ -728,11 +655,11 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             framingCam.m_ScreenX = Mathf.Lerp(framingCam.m_ScreenX, 0.5f, Time.deltaTime);
         }
 
-        if (moveData.wishJumpDown) {
-            virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 75f, Time.deltaTime * 4f);
-        } else {
+        // if (moveData.wishJumpDown) {
+        //     virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 75f, Time.deltaTime * 4f);
+        // } else {
             virtualCam.m_Lens.FieldOfView = Mathf.Lerp(virtualCam.m_Lens.FieldOfView, 90f, Time.deltaTime * 2f);
-        }
+        // }
 
         framingCam.m_DeadZoneDepth = 0f;
         // framingCam.m_TrackedObjectOffset = Vector3.up * framingCam.m_CameraDistance / 10f;
@@ -746,15 +673,26 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         //     framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, 9f, Time.deltaTime);
         // }
 
-        framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.velocity, viewForward) / 4f + 2f, 5f), Time.deltaTime * 2f);
+        framingCam.m_CameraDistance = Mathf.Lerp(framingCam.m_CameraDistance, Mathf.Max(Vector3.Dot(moveData.velocity, viewForward) / 4f, 1.5f), Time.deltaTime * 2f);
         
         framingCam.m_SoftZoneHeight = Mathf.Lerp(framingCam.m_SoftZoneHeight, .5f, Time.deltaTime * 4f);
         framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
         framingCam.m_DeadZoneHeight = 0f;
-        framingCam.m_DeadZoneWidth = .333f;
-        framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
-        framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
-        framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
+
+        if (moveData.wishJumpDown) {
+            framingCam.m_XDamping = 0f;
+            framingCam.m_YDamping = 0f;
+            framingCam.m_ZDamping = 0f;
+            framingCam.m_DeadZoneWidth = Mathf.Lerp(framingCam.m_DeadZoneWidth, 0f, Time.deltaTime * 4f);
+            focusAimBlend = Mathf.Lerp(focusAimBlend, .8f, Time.deltaTime * 4f);
+        } else {
+            framingCam.m_DeadZoneWidth = Mathf.Lerp(framingCam.m_DeadZoneWidth, .333f, Time.deltaTime * 4f);
+            framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
+            framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
+            focusAimBlend = Mathf.Lerp(focusAimBlend, .5f, Time.deltaTime * 8f);
+        }
+
         aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, 0f, Time.deltaTime * 2f);
 
         // aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, Mathf.Clamp01(moveData.velocity.magnitude / moveConfig.runSpeed) * stability, Time.deltaTime * 2f);
@@ -765,9 +703,11 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void ConnectGrapple(Vector3 grapplePosition) {
 
-        if (Vector3.Distance(moveData.origin, grapplePosition) < moveConfig.minDistance) {
+        if (Vector3.Distance(moveData.origin, grapplePosition) < moveConfig.minDistance && energySlider.value < .1f) {
             return;
         }
+
+        energySlider.value -= .1f;
 
         moveData.grapplePoint = grapplePosition;
         moveData.joint = gameObject.AddComponent<SpringJoint>();
@@ -1084,6 +1024,10 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         if (releaseTimer > 0f) {
             releaseTimer -= Time.deltaTime;
+        }
+
+        if (energySlider.value < 1f) {
+            energySlider.value += Time.deltaTime / 30f;
         }
         
     }

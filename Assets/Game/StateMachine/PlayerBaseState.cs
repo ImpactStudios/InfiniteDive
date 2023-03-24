@@ -55,8 +55,6 @@ public abstract class PlayerBaseState
                 // ctx.slashObj.SetActive(true);
                 // ctx.slash.Play();
 
-                Vector3 slashDir = Vector3.ProjectOnPlane(ctx.avatarLookForward, -ctx.moveData.focusDir);
-
                 string[] mask = new string[] { "Ball", "Enemy" };
 
                 // Collider[] hits = Physics.OverlapSphere(ctx.moveData.origin, 5f);
@@ -72,8 +70,11 @@ public abstract class PlayerBaseState
                             if (hit.TryGetComponent(out IHittable successfulHit)) {
                                 Debug.Log("hit");
 
+                                ctx.slashObj.transform.LookAt(ctx.moveData.grappleDir, Vector3.Cross(ctx.moveData.grappleDir, ctx.avatarLookForward).normalized);
+
                                 ctx.slashObj.SetActive(true);
                                 ctx.slash.Play();
+                                ctx.moveData.attacking = false;
                             }
 
                         }
@@ -81,31 +82,34 @@ public abstract class PlayerBaseState
 
                     }
                 }
-
-
-
             }
 
-            if (ctx.releaseTimer > 0f && !ctx.moveData.grappling) {
-
-                ctx.moveConfig.grappleColor = Color.Lerp(ctx.moveConfig.grappleColor, Color.clear, Time.deltaTime);
-
-                Vector3 releaseDir = releaseVelocity.normalized;
-
-                releasedPoints[0] += releaseVelocity * Time.deltaTime;
-                releasedPoints[1] += releaseVelocity * Time.deltaTime;
-                releasedPoints[2] += releaseVelocity * Time.deltaTime;
-                releasedPoints[3] += releaseVelocity * Time.deltaTime;
-
-                ctx._grappleArc.SetVector3("Pos0", releasedPoints[0]);
-                ctx._grappleArc.SetVector3("Pos1", releasedPoints[1]);
-                ctx._grappleArc.SetVector3("Pos2", releasedPoints[2]);
-                ctx._grappleArc.SetVector3("Pos3", releasedPoints[3]);
-                ctx._grappleArc.SetVector4("Color", ctx.moveConfig.grappleColor);
-
-                ctx.bezierCurve.DrawCurve();
-
+            if (ctx.lungeCooldownTimer > 0f) {
+                CancelVelocityAgainst(-ctx.velocityForward, Mathf.Sqrt(2f));
+            } else {
+                ctx.moveData.attacking = false;
             }
+
+            // if (ctx.releaseTimer > 0f && !ctx.moveData.grappling) {
+
+            //     ctx.moveConfig.grappleColor = Color.Lerp(ctx.moveConfig.grappleColor, Color.clear, Time.deltaTime);
+
+            //     Vector3 releaseDir = releaseVelocity.normalized;
+
+            //     releasedPoints[0] += releaseVelocity * Time.deltaTime;
+            //     releasedPoints[1] += releaseVelocity * Time.deltaTime;
+            //     releasedPoints[2] += releaseVelocity * Time.deltaTime;
+            //     releasedPoints[3] += releaseVelocity * Time.deltaTime;
+
+            //     ctx._grappleArc.SetVector3("Pos0", releasedPoints[0]);
+            //     ctx._grappleArc.SetVector3("Pos1", releasedPoints[1]);
+            //     ctx._grappleArc.SetVector3("Pos2", releasedPoints[2]);
+            //     ctx._grappleArc.SetVector3("Pos3", releasedPoints[3]);
+            //     ctx._grappleArc.SetVector4("Color", ctx.moveConfig.grappleColor);
+
+            //     ctx.bezierCurve.DrawCurve();
+
+            // }
 
         }
 
@@ -185,9 +189,9 @@ public abstract class PlayerBaseState
         ctx.moveData.vCharge = 0f;
     }
 
-    protected void BoostJump(Vector3 wishDir, float magnitude = 0f) {
+    protected void BoostJump(Vector3 wishDir, float customMagnitude = 0f) {
 
-        if (ctx.boostInputTimer > 0f) return;
+        if (ctx.boostInputTimer > 0f || ctx.energySlider.value < .25f) return;
 
         ctx.boostInputTimer = .2f;
         ctx.jumpTimer = Time.deltaTime * 2f;
@@ -196,14 +200,16 @@ public abstract class PlayerBaseState
         ctx.sonicBoom.Play();
 
         float forceJump = ctx.moveConfig.jumpForce * (ctx.moveData.vCharge + 2f);
-        if (magnitude > 0f) {
-            ctx.moveData.velocity = wishDir * magnitude + Vector3.Dot(ctx.moveData.velocity.normalized, wishDir) * ctx.moveData.velocity.magnitude * wishDir;
+        if (customMagnitude > 0f) {
+            ImpulseCancelVelocityAgainst(wishDir);
+            ctx.moveData.velocity = wishDir * customMagnitude + Vector3.Dot(ctx.moveData.velocity.normalized, wishDir) * ctx.moveData.velocity.magnitude * wishDir;
         } else {
             ImpulseCancelVelocityAgainst(wishDir);
-            ctx.moveData.velocity = wishDir * forceJump + Vector3.Dot(ctx.moveData.velocity.normalized, wishDir) * ctx.moveData.velocity.magnitude * wishDir;
+            ctx.moveData.velocity = wishDir * forceJump + Mathf.Clamp01(Vector3.Dot(ctx.moveData.velocity.normalized, wishDir)) * ctx.moveData.velocity.magnitude * wishDir;
         }
 
         ctx.moveData.vCharge = 0f;
+        ctx.energySlider.value -= .25f;
     }
 
     protected void Dash(Vector3 wishDir, float magnitude) {
@@ -224,7 +230,7 @@ public abstract class PlayerBaseState
         oldMomentum = Vector3.Lerp(oldMomentum, Vector3.zero, Time.deltaTime);
 
         if (Vector3.Scale(ctx.moveData.velocity, new Vector3(1f, 0f, 1f)).magnitude > ctx.moveConfig.walkSpeed) {
-            if (ctx.moveData.grounded) SubtractVelocityAgainst(ctx.moveData.velocity.normalized, Mathf.Max(oldMomentum.magnitude / 2f, 5f));
+            // if (ctx.moveData.grounded) SubtractVelocityAgainst(ctx.moveData.velocity.normalized, Mathf.Max(oldMomentum.magnitude / 4f, 5f));
             DiveInfluenceVelocity(Mathf.Pow(3f, .5f));
             oldMomentum = ctx.moveData.velocity;
         } else {
@@ -334,31 +340,31 @@ public abstract class PlayerBaseState
         ctx.moveData.velocity += ctx.moveData.flatWishMove * Time.deltaTime * ctx.moveConfig.walkSpeed / vFactor;
     }
 
-    // public void OnlyAngularVelocityControl(float response, float pull) {
+    public void OnlyAngularVelocityControl(float response) {
 
-    //     float speed = ctx.moveData.velocity.magnitude;
-    //     Vector3 result = Vector3.zero;
-    //     Vector3 velocityRadial = Vector3.Dot(ctx.moveData.velocity, ctx.moveData.targetDir) * ctx.moveData.targetDir;
+        float speed = ctx.moveData.velocity.magnitude;
+        Vector3 result = Vector3.zero;
+        Vector3 velocityRadial = Vector3.Dot(ctx.moveData.velocity, ctx.moveData.grappleDir) * ctx.moveData.grappleDir;
         
-    //     Vector3 targetUp = Vector3.Cross(ctx.moveData.targetDir, ctx.velocityForward);
+        Vector3 targetUp = Vector3.Cross(ctx.moveData.grappleDir, ctx.avatarLookForward).normalized;
 
-    //     // if (Vector3.Dot(ctx.moveData.velocity, ctx.moveData.targetDir) < 0f) {
-    //     //     velocityRadial = Vector3.Dot(ctx.moveData.velocity, ctx.moveData.targetDir) * ctx.moveData.targetDir;
-    //     // }
+        // if (Vector3.Dot(ctx.moveData.velocity, ctx.moveData.grappleDir) < 0f) {
+        //     velocityRadial = Vector3.Dot(ctx.moveData.velocity, ctx.moveData.grappleDir) * ctx.moveData.grappleDir;
+        // }
 
-    //     Vector3 velocityOrthagonal = ctx.moveData.velocity - velocityRadial;
+        Vector3 velocityOrthagonal = ctx.moveData.velocity - velocityRadial;
 
-    //     Vector3 velocityOrthagonalUp = Vector3.Project(velocityOrthagonal, Vector3.up);
-    //     Vector3 velocityOrthagonalRight = velocityOrthagonal - velocityOrthagonalUp;
+        Vector3 velocityOrthagonalUp = Vector3.Project(velocityOrthagonal, targetUp);
+        Vector3 velocityOrthagonalRight = velocityOrthagonal - velocityOrthagonalUp;
 
-    //     Vector3 velocityOrthagonalUpDampen = Vector3.Dot(velocityOrthagonal, -Vector3.up) * Vector3.up;
+        Vector3 velocityOrthagonalUpDampen = Vector3.Dot(velocityOrthagonal, -targetUp) * targetUp;
 
-    //     result = (velocityOrthagonalRight + velocityOrthagonalUp + velocityOrthagonalUpDampen * Time.deltaTime + pull * ctx.moveData.targetDir * Time.deltaTime).normalized * speed;
-        
-    //     // ctx.moveData.velocity = Vector3.Slerp(ctx.moveData.velocity, result, Time.deltaTime * response);
-    //     ctx.moveData.velocity = velocityOrthagonal;
+        result = (velocityOrthagonalRight + velocityOrthagonalUp + velocityOrthagonalUpDampen + velocityRadial).normalized * speed;
+                
+        ctx.moveData.velocity = Vector3.Slerp(ctx.moveData.velocity, result, Time.deltaTime * response);
+        // ctx.moveData.velocity = velocityOrthagonal;
 
-    // }
+    }
 
     protected void SubtractVelocityAgainst(Vector3 wishDir, float amount) {
 
