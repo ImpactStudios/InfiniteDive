@@ -99,7 +99,7 @@ public class PlayerStateGrapple : PlayerBaseState {
                 
                 float power = initialDistance/2f;
                 
-                ctx.moveData.velocity += (ctx.moveData.grappleDir + ctx.avatarLookForward / 8f).normalized * power * Time.deltaTime * (Mathf.Sqrt(3f));
+                ctx.moveData.velocity += (ctx.moveData.grappleDir + ctx.avatarLookForward / 2f).normalized * power * Time.deltaTime * 1.5f;
                 // ctx.moveData.velocity = Vector3.ClampMagnitude(ctx.moveData.velocity, initialDistance * 2f);
 
                 ctx.moveConfig.grappleColor = Color.Lerp(ctx.moveConfig.grappleColor, ctx.moveConfig.accelColor, Time.deltaTime * 2f);
@@ -124,27 +124,27 @@ public class PlayerStateGrapple : PlayerBaseState {
                 releasedPoints[3] = ctx._grappleArc.GetVector3("Pos3");
             }
 
-            if (ctx.moveData.wishJumpUp) {
-                // CancelVelocityAgainst(ctx.avatarLookForward, .5f);
-                Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
-                BoostJump(wishDir, Mathf.Max(30f, ctx.moveData.distanceFromGrapple * 2f));
-                ctx.sphereLines.Stop();
-                ctx.moveData.grappling = false;
-                ctx.moveData.attacking = true;
-                ctx.lungeCooldownTimer = 1f;
-            }
+            // if (ctx.moveData.wishJumpUp) {
+            //     // CancelVelocityAgainst(ctx.avatarLookForward, .5f);
+            //     Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
+            //     BoostJump(wishDir, Mathf.Max(30f, ctx.moveData.distanceFromGrapple * 2f));
+            //     ctx.sphereLines.Stop();
+            //     ctx.moveData.grappling = false;
+            //     ctx.moveData.attacking = true;
+            //     ctx.lungeCooldownTimer = 1f;
+            // }
 
-            if (ctx.moveData.wishJumpDown) {
-                // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 1.5f, Time.deltaTime * 4f);
-                ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
-                ctx.sphereLines.Play();
+            // if (ctx.moveData.wishJumpDown) {
+            //     // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 1.5f, Time.deltaTime * 4f);
+            //     ctx.sphereLines.SetFloat("Speed", -ctx.moveData.vCharge);
+            //     ctx.sphereLines.Play();
 
-                ctx.focusAimBlend = Mathf.Lerp(ctx.focusAimBlend, .8f, Time.deltaTime * 8f);
+            //     ctx.focusAimBlend = Mathf.Lerp(ctx.focusAimBlend, .8f, Time.deltaTime * 8f);
                 
-                // SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude * 2f);
+            //     // SubtractVelocityAgainst(ref ctx.moveData.velocity, -ctx.moveData.velocity.normalized, ctx.moveData.velocity.magnitude * 2f);
 
-                BrakeCharge(ctx.avatarLookForward);
-            }
+            //     BrakeCharge(ctx.avatarLookForward);
+            // }
 
     }
 

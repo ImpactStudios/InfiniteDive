@@ -20,7 +20,7 @@ public class PlayerStateGrounded : PlayerBaseState
     public override void UpdateState()
     {
 
-        // Debug.Log(ctx.moveData.velocity);
+        Debug.Log(ctx.moveData.velocity.magnitude);
 
         if (ctx.moveData.wishJumpDown && ctx.energySlider.value > .25f) {
             // ctx.framingCam.m_CameraDistance = Mathf.Lerp(ctx.framingCam.m_CameraDistance, 3f, Time.deltaTime * 4f);
@@ -34,13 +34,9 @@ public class PlayerStateGrounded : PlayerBaseState
 
         // if (ctx.moveData.wishJumpUp && !ctx.moveData.grappling) {
         //     BoostJump(ctx.avatarLookForward, Mathf.Max(ctx.moveData.velocity.magnitude, 30f));
-        // } 
+        // }
 
-        if (ctx.moveData.wishCrouchDown) {
-
-            SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude);
-        
-        }
+        Slide(ctx.moveData.wishCrouchDown);
 
         CheckSwitchStates();
     }
@@ -51,10 +47,7 @@ public class PlayerStateGrounded : PlayerBaseState
         // ctx.smokeLand.SetVector3("position", ctx.moveData.origin);
         // Debug.Log("EXIT GROUNDED");
 
-        ctx.airHike.SetVector3("origin", ctx.moveData.origin);
-        ctx.airHike.SetVector3("lookAt", ctx.groundNormal);
-        ctx.airHike.SetFloat("size", 4f);
-        ctx.airHike.Play();
+        
     }
 
     public override void InitializeSubStates()

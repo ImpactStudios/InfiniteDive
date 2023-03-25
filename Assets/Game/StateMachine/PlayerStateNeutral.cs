@@ -20,7 +20,7 @@ public class PlayerStateNeutral : PlayerBaseState {
 
         if (ctx.moveData.wishJumpUp && ctx.moveData.grounded) {
             // CancelVelocityAgainst(ctx.avatarLookForward, .5f);
-            Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? avatarLookFlat * ctx.moveData.inputDir : ctx.avatarLookForward;
+            Vector3 wishDir = ctx.moveData.inputDir.magnitude > .25f ? (avatarLookFlat * ctx.moveData.inputDir + Vector3.up / 16f).normalized  : ctx.avatarLookForward;
             BoostJump(wishDir, Mathf.Max(ctx.moveData.velocity.magnitude, 20f));
             ctx.sphereLines.Stop();
         }

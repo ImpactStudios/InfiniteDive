@@ -4,7 +4,6 @@ public class PlayerStateFactory {
 
     enum State {
         neutral,
-        dash,
         air,
         fall,
         dive,
@@ -31,7 +30,6 @@ public class PlayerStateFactory {
         // sub states
 
         _states[State.neutral] = new PlayerStateNeutral(_context, this);
-        _states[State.dash] = new PlayerStateDash(_context, this);
         _states[State.fall] = new PlayerStateFall(_context, this);
         _states[State.dive] = new PlayerStateDive(_context, this);
         
@@ -45,11 +43,7 @@ public class PlayerStateFactory {
     public PlayerBaseState Neutral() {
         return _states[State.neutral];
     }
-
-    public PlayerBaseState Dash() {
-        return _states[State.dash];
-    }
-
+    
     public PlayerBaseState Dive() {
         return _states[State.dive];
     }

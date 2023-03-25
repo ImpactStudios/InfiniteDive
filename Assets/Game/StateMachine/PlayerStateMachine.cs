@@ -155,7 +155,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         slashObj = transform.GetChild(1).transform.GetChild(1).gameObject;
 
         energySlider = energyObj.GetComponent<Slider>();
-        energySlider.value = .5f;
+        energySlider.value = .25f;
 
 
 
@@ -466,8 +466,10 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
     private void CheckGrapplePress() {
 
-        if (moveData.wishFire2Press && !moveData.grappling) {
+        if (moveData.wishFire2Press && !moveData.grappling && energySlider.value > .1f) {
             ConnectGrapple(moveData.focusPoint);
+            energySlider.value -= .1f;
+            
         }
 
 
@@ -679,19 +681,19 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
         framingCam.m_SoftZoneWidth = Mathf.Lerp(framingCam.m_SoftZoneWidth, .5f, Time.deltaTime * 4f);
         framingCam.m_DeadZoneHeight = 0f;
 
-        if (moveData.wishJumpDown) {
-            framingCam.m_XDamping = 0f;
-            framingCam.m_YDamping = 0f;
-            framingCam.m_ZDamping = 0f;
-            framingCam.m_DeadZoneWidth = Mathf.Lerp(framingCam.m_DeadZoneWidth, 0f, Time.deltaTime * 4f);
-            focusAimBlend = Mathf.Lerp(focusAimBlend, .8f, Time.deltaTime * 4f);
-        } else {
+        // if (moveData.wishJumpDown) {
+        //     framingCam.m_XDamping = 0f;
+        //     framingCam.m_YDamping = 0f;
+        //     framingCam.m_ZDamping = 0f;
+        //     framingCam.m_DeadZoneWidth = Mathf.Lerp(framingCam.m_DeadZoneWidth, 0f, Time.deltaTime * 4f);
+        //     focusAimBlend = Mathf.Lerp(focusAimBlend, .8f, Time.deltaTime * 4f);
+        // } else {
             framingCam.m_DeadZoneWidth = Mathf.Lerp(framingCam.m_DeadZoneWidth, .333f, Time.deltaTime * 4f);
             framingCam.m_XDamping = Mathf.Lerp(framingCam.m_XDamping, 1f, Time.deltaTime * 4f);
             framingCam.m_YDamping = Mathf.Lerp(framingCam.m_YDamping, 1f, Time.deltaTime * 4f);
             framingCam.m_ZDamping = Mathf.Lerp(framingCam.m_ZDamping, 0f, Time.deltaTime * 4f);
             focusAimBlend = Mathf.Lerp(focusAimBlend, .5f, Time.deltaTime * 8f);
-        }
+        // }
 
         aimCam.m_Damping = Mathf.Lerp(aimCam.m_Damping, 0f, Time.deltaTime * 2f);
 
@@ -707,7 +709,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             return;
         }
 
-        energySlider.value -= .1f;
+        
 
         moveData.grapplePoint = grapplePosition;
         moveData.joint = gameObject.AddComponent<SpringJoint>();
@@ -848,7 +850,7 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             origin: moveData.origin,
             direction: -groundNormal,
             hitInfo: out hit,
-            maxDistance: 1.5f,
+            maxDistance: 1.4f,
             layerMask: LayerMask.GetMask (new string[] { "Focus", "Ground" }),
             queryTriggerInteraction: QueryTriggerInteraction.Ignore)) {
             
@@ -866,9 +868,9 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             groundNormal = hit.normal.normalized;
             SetGround(hit.collider.gameObject);
 
-            if (Vector3.Distance(moveData.origin - groundNormal, lastContact) < .49f) {
-                moveData.origin += groundNormal * Mathf.Min(Time.deltaTime, .01f); // soft collision resolution?
-            }
+            // if (Vector3.Distance(moveData.origin - groundNormal, lastContact) < .49f) {
+            //     moveData.origin += groundNormal * Mathf.Min(Time.deltaTime, .01f); // soft collision resolution?
+            // }
 
             if (!moveData.grounded) {
 
@@ -919,9 +921,9 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
 
         } else {
 
+            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.velocity, LayerMask.GetMask (new string[] { "Ground" }));
             moveData.origin += moveData.velocity * Time.deltaTime; // p = v * dt
 
-            DivePhysics.ResolveCollisions(playerCollider, ref moveData.origin, ref moveData.velocity, LayerMask.GetMask (new string[] { "Ground" }));
 
         }
 
@@ -1026,8 +1028,9 @@ public class PlayerStateMachine : MonoBehaviour, IDiveControllable {
             releaseTimer -= Time.deltaTime;
         }
 
-        if (energySlider.value < 1f) {
-            energySlider.value += Time.deltaTime / 30f;
+        if (energySlider.value < 1f && moveData.grounded) {
+            var meterGainSlowness = .005f;
+            energySlider.value += (moveData.velocity.magnitude * meterGainSlowness) * Time.deltaTime;
         }
         
     }

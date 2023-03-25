@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -42,6 +43,12 @@ public abstract class PlayerBaseState
         flatForwardSide = avatarLookFlatSide * Vector3.forward;
 
         if (_isRootState) {
+
+            float airResistance = 2.5f;
+
+            if (ctx.moveData.velocity.magnitude > 30f) {
+                SubtractVelocityAgainst(ctx.moveData.velocity, airResistance);
+            }
 
             if (!ctx.moveData.wishShiftDown) {
                 ctx.moveConfig.grappleColor = Color.Lerp(ctx.moveConfig.grappleColor, ctx.moveConfig.normalColor, Time.deltaTime);
@@ -179,8 +186,8 @@ public abstract class PlayerBaseState
     protected void Jump(Vector3 normal, Vector3 wishDir) {
 
         ctx.boostInputTimer = .2f;
-        ctx.jumpTimer = Time.deltaTime * 2f;
-        ctx.ignoreGravityTimer = Time.deltaTime * 2f;
+        ctx.jumpTimer = Time.deltaTime;
+        ctx.ignoreGravityTimer = Time.deltaTime;
 
 
         float forceJump = ctx.moveConfig.jumpForce * (ctx.moveData.vCharge + 1f);
@@ -193,28 +200,43 @@ public abstract class PlayerBaseState
 
         if (ctx.boostInputTimer > 0f || ctx.energySlider.value < .25f) return;
 
-        ctx.boostInputTimer = .2f;
-        ctx.jumpTimer = Time.deltaTime * 2f;
+        // ctx.boostInputTimer = Time.deltaTime * 2f;
+        // ctx.jumpTimer = Time.deltaTime * 2f;
         ctx.ignoreGravityTimer = Time.deltaTime * 2f;
+
+        ctx.airHike.SetVector3("origin", ctx.moveData.origin);
+        ctx.airHike.SetVector3("lookAt", ctx.groundNormal);
+        ctx.airHike.SetFloat("size", 4f);
+        ctx.airHike.Play();
 
         ctx.sonicBoom.Play();
 
-        float forceJump = ctx.moveConfig.jumpForce * (ctx.moveData.vCharge + 2f);
-        if (customMagnitude > 0f) {
+        float relativePower = Mathf.Clamp((ctx.moveData.velocity.magnitude + 20f)/ctx.moveData.velocity.magnitude, -20f, 20f);
+
+        float forceJump = ctx.moveConfig.jumpForce + relativePower;
+        // if (customMagnitude > 0f) {
+        //     ImpulseCancelVelocityAgainst(wishDir);
+        //     ctx.moveData.velocity = wishDir * customMagnitude + Vector3.Dot(ctx.moveData.velocity.normalized, wishDir) * ctx.moveData.velocity.magnitude * wishDir;
+        // } else {
             ImpulseCancelVelocityAgainst(wishDir);
-            ctx.moveData.velocity = wishDir * customMagnitude + Vector3.Dot(ctx.moveData.velocity.normalized, wishDir) * ctx.moveData.velocity.magnitude * wishDir;
-        } else {
-            ImpulseCancelVelocityAgainst(wishDir);
-            ctx.moveData.velocity = wishDir * forceJump + Mathf.Clamp01(Vector3.Dot(ctx.moveData.velocity.normalized, wishDir)) * ctx.moveData.velocity.magnitude * wishDir;
-        }
+            ctx.moveData.velocity = wishDir * forceJump + Mathf.Clamp01(Vector3.Dot(ctx.moveData.velocity.normalized, wishDir)) * Vector3.Dot(ctx.moveData.velocity, wishDir) * wishDir;
+        // }
 
         ctx.moveData.vCharge = 0f;
         ctx.energySlider.value -= .25f;
     }
 
-    protected void Dash(Vector3 wishDir, float magnitude) {
+    protected void Slide(bool sliding) {
+        if (sliding) {
+            SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude / 2f);
+        }
+    }
 
-        ctx.moveData.velocity = wishDir * magnitude;
+    protected void Fly(Vector3 wishDir, float magnitude) {
+        if (ctx.moveData.wishCrouchDown) {
+            SubtractVelocityAgainst(ctx.moveData.velocity, ctx.moveData.velocity.magnitude / 2f);
+        }
+        
 
     }
 
@@ -372,8 +394,8 @@ public abstract class PlayerBaseState
 
     }
 
-    protected void SubtractVelocityAgainst(ref Vector3 originalV, Vector3 wishDir, float amount) {
-        originalV += Vector3.Dot(ctx.moveData.velocity.normalized, -wishDir.normalized) * wishDir.normalized * amount * Time.deltaTime; 
+    protected void AddVelocityTowards(Vector3 wishDir, float amount) {
+        ctx.moveData.velocity += Vector3.Dot(ctx.moveData.velocity.normalized, wishDir.normalized) * wishDir.normalized * amount * Time.deltaTime;  
     }
 
 }

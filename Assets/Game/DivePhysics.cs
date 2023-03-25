@@ -61,7 +61,8 @@ public class DivePhysics {
 
                 // Handle collision
                 direction.Normalize();
-                Vector3 penetrationVector = direction * (distance + .5f * isSide);
+                // Vector3 penetrationVector = direction * (distance + .5f * isSide);
+                Vector3 penetrationVector = direction * (distance);
                 origin += penetrationVector;
 
                 // velocity += planeForward;
